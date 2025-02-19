@@ -10,4 +10,7 @@
         <param name="baud" value="115200"/>
     </node>
 
+    <node name="command_receive" pkg="test_package" type="command_receive.py" output="screen">
+        <param name="param1" value="default_value"/>
+    </node>
 </launch>
