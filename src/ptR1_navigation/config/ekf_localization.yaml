@@ -1,0 +1,31 @@
+frequency: 30  # ความถี่ในการคำนวณ (Hz)
+sensor_timeout: 0.1  # Timeout ของเซ็นเซอร์ที่ยอมรับได้
+two_d_mode: true  # ใช้โหมด 2D (ล็อคค่า Z ไว้)
+
+odom_frame: odom
+base_link_frame: base_link
+world_frame: odom  # ใช้ odom เป็น world frame
+
+#ใช้ Odometry จากล้อ
+odom0: /odometry
+odom0_config: [true, true, false,  # ใช้ X, Y (ไม่ใช้ Z)
+               false, false, false, # ไม่ใช้ Roll, Pitch, Yaw จาก Encoder
+               true, true, false,   # ใช้ Vx, Vy (ไม่ใช้ Vz)
+               false, false, false] # ไม่ใช้ Angular Velocity
+
+#ใช้ IMU จาก MPU6050
+imu0: /imu/data
+imu0_config: [false, false, false, # ไม่ใช้ตำแหน่งจาก IMU
+              true, true, true,    # ใช้ Roll, Pitch, Yaw
+              false, false, false, # ไม่ใช้ Linear Velocity
+              true, true, true]    # ใช้ Angular Velocity
+
+imu0_differential: false  # IMU ใช้ค่า Absolute
+imu0_remove_gravitational_acceleration: true  # ลบค่าแรงโน้มถ่วงออก
+
+#ใช้ Magnetometer เพื่อช่วยเรื่องทิศทาง Yaw
+imu1: /imu/mag
+imu1_config: [false, false, false,  # ไม่ใช้ตำแหน่ง
+              false, false, true,   # ใช้ Yaw จาก Magnetometer
+              false, false, false,  # ไม่ใช้ Linear Velocity
+              false, false, false]  # ไม่ใช้ Angular Velocity

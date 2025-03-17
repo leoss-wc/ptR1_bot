@@ -1,16 +1,30 @@
 <launch> 
    
-   <!-- Start ROSBridge WebSocket -->
+    <!-- Start ROSBridge WebSocket -->
     <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch"/>
 
-
-    <node pkg="rosserial_python" type="serial_node.py" name="serial_node"
+    <!-- ROSSerial สำหรับ Mega ที่ /dev/ttyUSB0 -->
+    <node pkg="rosserial_python" type="serial_node.py" name="serial_node_mega"
           output="screen">
         <param name="port" value="/dev/ttyUSB0"/>
-        <param name="baud" value="115200"/>
+        <param name="baud" value="250000"/>
     </node>
 
+    <!-- ROSSerial สำหรับ Nano ที่ /dev/ttyUSB1 -->
+    <node pkg="rosserial_python" type="serial_node.py" name="serial_node_nano"
+          output="screen">
+        <param name="port" value="/dev/ttyUSB1"/>
+        <param name="baud" value="57600"/>
+    </node>
+
+     <!-- ROSSerial สำหรับการสื่อสารผ่าน heximal -->
     <node name="command_receive" pkg="test_package" type="command_receive.py" output="screen">
         <param name="param1" value="default_value"/>
     </node>
+
+    <!-- ROSSerial สำหรับการแปลงข้อมูล -->
+    <node name="transfer_data_node" pkg="test_package" type="transfer_data.py" output="screen">
+        <param name="param1" value="default_value"/>
+    </node>
+
 </launch>
