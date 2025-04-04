@@ -1,0 +1,10 @@
+digraph G {
+"base_link" -> "imu_link"[label="Broadcaster: /static_tf_broadcaster\nAverage rate: 10000.000 Hz\nMost recent transform: 0.000 ( 1743535445.626 sec old)\nBuffer length: 0.000 sec\n"];
+"odom" -> "base_link"[label="Broadcaster: /ekf_localization\nAverage rate: 30.145 Hz\nMost recent transform: 1743535445.612 ( 0.014 sec old)\nBuffer length: 4.976 sec\n"];
+"base_link" -> "mag_link"[label="Broadcaster: /static_tf_broadcaster\nAverage rate: 10000.000 Hz\nMost recent transform: 0.000 ( 1743535445.626 sec old)\nBuffer length: 0.000 sec\n"];
+"base_link" -> "lidar_link"[label="Broadcaster: /static_tf_broadcaster\nAverage rate: 10000.000 Hz\nMost recent transform: 0.000 ( 1743535445.626 sec old)\nBuffer length: 0.000 sec\n"];
+edge [style=invis];
+ subgraph cluster_legend { style=bold; color=black; label ="view_frames Result";
+"Recorded at time: 1743535445.626"[ shape=plaintext ] ;
+ }->"odom";
+}

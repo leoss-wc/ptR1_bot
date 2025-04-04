@@ -10,14 +10,6 @@
         <param name="baud" value="250000"/>
     </node>
 
-
-    <!-- ROSSerial สำหรับ Nano ที่ /dev/ttyUSB1 -->
-    <node pkg="rosserial_python" type="serial_node.py" name="serial_node_nano"
-          output="screen">
-        <param name="port" value="/dev/ttyUSB1"/>
-        <param name="baud" value="57600"/>
-    </node>
-
      <!-- ROSSerial สำหรับการสื่อสารผ่าน heximal -->
     <node name="command_receive" pkg="test_package" type="command_receive.py" output="screen">
         <param name="param1" value="default_value"/>

@@ -13,6 +13,8 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   geometry_msgs
   nav_msgs
+  tf
+  tf2_ros
 )
 
 ## System dependencies are found with CMake's conventions
@@ -135,7 +137,8 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/test_package_node.cpp)
+#add_executable(${PROJECT_NAME}_node src/test_package_nde.cpp)
+add_executable(static_tf_node src/static_tf.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -151,6 +154,10 @@ include_directories(
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
+
+target_link_libraries(static_tf_node 
+  ${catkin_LIBRARIES}
+)
 
 #############
 ## Install ##
