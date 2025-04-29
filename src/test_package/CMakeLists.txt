@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0.2)
 project(test_package)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-# add_compile_options(-std=c++11)
+add_compile_options(-std=c++11)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -15,10 +15,17 @@ find_package(catkin REQUIRED COMPONENTS
   nav_msgs
   tf
   tf2_ros
+  sensor_msgs
+  cv_bridge
 )
+
+find_package(OpenCV REQUIRED)
+find_package(Boost REQUIRED COMPONENTS system thread)
+
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
+
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -109,7 +116,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES test_package
-#  CATKIN_DEPENDS roscpp rospy std_msgs
+  CATKIN_DEPENDS roscpp rospy std_msgs geometry_msgs nav_msgs tf tf2_ros sensor_msgs  cv_bridge
 #  DEPENDS system_lib
 )
 
@@ -122,6 +129,7 @@ catkin_package(
 include_directories(
 # include
   ${catkin_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -139,6 +147,7 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 #add_executable(${PROJECT_NAME}_node src/test_package_nde.cpp)
 add_executable(static_tf_node src/static_tf.cpp)
+add_executable(image_ws_node src/image_ws_streamer.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -154,6 +163,11 @@ add_executable(static_tf_node src/static_tf.cpp)
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
+target_link_libraries(image_ws_node
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBS}
+  ${Boost_INCLUDE_DIRS}
+)
 
 target_link_libraries(static_tf_node 
   ${catkin_LIBRARIES}
@@ -172,6 +186,7 @@ target_link_libraries(static_tf_node
    src/transfer_data.py
    src/command_receive.py
    src/motionTest1.py
+   src/img_ws.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 
