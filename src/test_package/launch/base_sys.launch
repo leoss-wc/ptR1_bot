@@ -6,8 +6,13 @@
     <!-- ROSSerial สำหรับ Mega ที่ /dev/ttyUSB0 
     <node pkg="rosserial_python" type="serial_node.py" name="serial_node_mega"
           output="screen">
+<<<<<<< HEAD
         <param name="port" value="/dev/ttyUSB0"/>
         <param name="baud" value="250000"/>
+=======
+        <param name="port" value="/dev/rosserial"/>
+        <param name="baud" value="115200"/>
+>>>>>>> a9de28f6936be0e6fcbb6767a841e538a5d3be85
     </node>
     -->
     
@@ -35,5 +40,8 @@
     <node name="camera_ws_py" pkg="test_package" type="img_ws.py" output="screen">
         <param name="param1" value="default_value"/>
     </node>
+<<<<<<< HEAD
 
+=======
+>>>>>>> a9de28f6936be0e6fcbb6767a841e538a5d3be85
 </launch>
