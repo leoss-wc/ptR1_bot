@@ -13,9 +13,9 @@ class CommandHandler:
         self.auto_drive_data = None    # เก็บคำสั่งจาก /cmd_vel
         self.mode = 1
 
-        rospy.Subscriber('/rb/cm/dr', String, self.callback_dr)
-        rospy.Subscriber('/rb/cm/sv', String, self.callback_sv)
-        rospy.Subscriber('/rb/cm/ed', String, self.callback_ed)
+        rospy.Subscriber('/rb/cm/dr', UInt16, self.callback_dr)
+        rospy.Subscriber('/rb/cm/sv', UInt16, self.callback_sv)
+        rospy.Subscriber('/rb/cm/ed', UInt32, self.callback_ed)
         rospy.Subscriber('/cmd_vel', Twist, self.callback_move_base)
 
         rospy.loginfo("Node command_handler initialized and running...")
