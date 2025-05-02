@@ -5,11 +5,6 @@
 
     <!-- ROSSerial สำหรับ Mega ที่ /dev/ttyUSB0 -->
 
-     <!-- ROSSerial สำหรับการสื่อสารผ่าน heximal -->
-    <node name="command_receive" pkg="test_package" type="command_receive.py" output="screen">
-        <param name="param1" value="default_value"/>
-    </node>
-
     <!-- ROSSerial สำหรับการแปลงข้อมูล -->
     <node name="transfer_data_node" pkg="test_package" type="transfer_data.py" output="screen">
         <param name="param1" value="default_value"/>

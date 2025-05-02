@@ -2,3 +2,4 @@ build/
 devel/
 install/
 src/ydlidar_ros_driver/
+src/robot_description

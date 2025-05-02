@@ -6,8 +6,8 @@ import threading
 import time
 import rospy
 from sensor_msgs.msg import Image
-from cv_bridge import CvBridge
 import cv2
+import numpy as np
 
 # ------------------------[ CONFIG ]------------------------
 DEFAULT_QUALITY = 80
@@ -16,7 +16,6 @@ MAX_QUALITY = 90
 TARGET_FPS = 30
 
 # ------------------------[ GLOBALS ]------------------------
-bridge = CvBridge()
 clients = {}
 clients_lock = asyncio.Lock()
 sending_lock = asyncio.Lock()
@@ -53,7 +52,10 @@ def image_callback(msg):
                     client.last_frame_time = now
 
                     try:
-                        cv_image = bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+                        if msg.encoding != "bgr8":
+                            rospy.logwarn(f"Unsupported encoding: {msg.encoding}")
+                            return
+                        cv_image = np.frombuffer(msg.data, dtype=np.uint8).reshape(msg.height, msg.width, 3)
                         quality = max(MIN_QUALITY, min(client.quality, MAX_QUALITY))
                         ret, jpeg = cv2.imencode('.jpg', cv_image, [int(cv2.IMWRITE_JPEG_QUALITY), quality])
                         if not ret:
