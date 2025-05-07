@@ -23,16 +23,16 @@
         <param name="param1" value="default_value"/>
     </node>
 
-    <!-- Start cv_camera (USB webcam) and remap to /camera/image_raw -->
+    <!-- Start cv_camera (USB webcam) and remap to /camera/image_raw 
     <node pkg="cv_camera" type="cv_camera_node" name="cv_camera_node" output="screen" respawn="false">
         <param name="device_id" value="0"/>
         <param name="image_width" value="640"/>
         <param name="image_height" value="480"/>
         <param name="fps" value="15"/>
         <param name="frame_id" value="camera_frame"/>
-        <param name="pixel_format" value="mjpeg"/>   <!-- Force MJPEG for better speed -->
+        <param name="pixel_format" value="mjpeg"/>   
         <param name="use_camera_info" value="false"/>
-    </node>
+    </node> -->
     
     <!-- Start the camera WebSocket server -->
     <node name="camera_ws_py" pkg="test_package" type="img_ws.py" output="screen">
