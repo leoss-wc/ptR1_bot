@@ -10,7 +10,7 @@ world_frame: odom #หมายถึงว่า EKF คำนวณ odom → b
                   #ถ้ามี map → odom จาก AMCL หรือ SLAM, EKF จะไม่ยุ่งเกี่ยว
 
 # ====== Odometry ======
-odom0: /odom
+odom0: /wheel_odom
 odom0_config: [true,  true,  false,   # x, y, z
                false, false, false,  # roll, pitch, yaw
                true,  true,  false,  # vx, vy, vz
@@ -34,7 +34,7 @@ imu0_relative: false         # เป็น false เช่นกัน ถ้�
 imu0_queue_size: 10
 
 # ====== IMU1 - Compass (QMC5883) ======
-imu1: /imu/mag_orientation
+imu1: /imu/mag
 imu1_config: [false, false, false,  # position
               false, false, true,   # orientation (yaw only)
               false, false, false,  # linear velocity

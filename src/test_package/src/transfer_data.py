@@ -5,7 +5,7 @@ from nav_msgs.msg import Odometry
 class TransferData:
     def __init__(self):
         rospy.init_node('transfer_data_node', anonymous=True)
-        self.pub_odom = rospy.Publisher('/odom', Odometry, queue_size=100)
+        self.pub_odom = rospy.Publisher('/wheel_odom', Odometry, queue_size=100)
         rospy.Subscriber('/robot_velocity', Twist, self.velocityCallback)
 
     def velocityCallback(self, msg):
