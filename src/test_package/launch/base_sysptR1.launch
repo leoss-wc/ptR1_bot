@@ -18,11 +18,6 @@
         <param name="baud" value="57600"/>
     </node>
 
-    <!-- ROSSerial สำหรับการแปลงข้อมูล -->
-    <node name="transfer_data_node" pkg="test_package" type="transfer_data.py" output="screen">
-        <param name="param1" value="default_value"/>
-    </node>
-
     <!-- Start cv_camera (USB webcam) and remap to /camera/image_raw 
     <node pkg="cv_camera" type="cv_camera_node" name="cv_camera_node" output="screen" respawn="false">
         <param name="device_id" value="0"/>
