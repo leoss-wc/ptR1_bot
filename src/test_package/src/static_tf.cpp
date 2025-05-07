@@ -30,16 +30,14 @@ void publishStaticTF(const std::string& parent, const std::string& child,
 int main(int argc, char** argv) {
     ros::init(argc, argv, "static_tf_broadcaster");
     ros::NodeHandle nh;
+    ros::Duration(0.5).sleep();
 
     // IMU: วางตรง, ไม่หมุน
     publishStaticTF("base_link", "imu_link", 0.09, 0.01, 0.24, 0.0, 0.0, 0.0);
 
     // Compass: วางตรง, ไม่หมุน
     publishStaticTF("base_link", "mag_link", 0.03, 0.02, 0.24, 0.0, 0.0, 0.0);
-
-    // LiDAR: วางแบบหมุน Yaw 180 องศา (กลับหัวไปด้านหลัง)
-    publishStaticTF("base_link", "lidar_link", 0.08, 0.0, 0.27, 0.0, 0.0, 0.0);
-
+    
     ros::spin();
     return 0;
 }
