@@ -17,6 +17,14 @@ class TransferData:
 
         odom_msg.twist.twist = msg
 
+         # ➕ กำหนดค่าความเชื่อมั่นให้ EKF ยอมรับ
+        odom_msg.twist.covariance[0] = 0.01   # linear x
+        odom_msg.twist.covariance[7] = 0.01   # linear y
+        odom_msg.twist.covariance[35] = 0.01  # angular z
+
+        # ➕ ตั้ง orientation.w ให้ไม่เป็น 0
+        odom_msg.pose.pose.orientation.w = 1.0
+
         self.pub_odom.publish(odom_msg)
     
     def run(self):
