@@ -1,17 +1,7 @@
 <launch>
 
-  <!-- 🔁 TF: imu_link → base_link -->
-  <node pkg="tf" type="static_transform_publisher" name="imu_to_base" 
-        args="-0.09 -0.01 -0.24 0 0 0 imu_link base_link 100" />
-
-  <!-- 🔁 TF: mag_link → base_link -->
-  <node pkg="tf" type="static_transform_publisher" name="mag_to_base" 
-        args="-0.03 -0.02 -0.24 0 0 0 mag_link base_link 100" />
-
-  <!-- 📦 Node: ตรวจสอบ TF ด้วย Time(0) ปลอดภัย -->
-  <node name="imu_tf_listener_node" pkg="test_package" type="imu_tf_listener.py" output="screen">
-    <param name="param1" value="default_value"/>
-  </node>
+  <!-- 🧭 TF Broadcaster แบบมี timestamp สด -->
+  <node name="custom_static_tf" pkg="test_package" type="dynamic_static_tf.py" output="screen"/>
 
   <!-- 🔌 ROSSerial (ส่ง IMU, Mag, Odom) -->
   <node name="transfer_data_node" pkg="test_package" type="transfer_data.py" output="screen">
@@ -25,8 +15,6 @@
     <param name="base_link_frame" value="base_link"/>
     <param name="world_frame" value="odom"/>
     <param name="publish_tf" value="true"/>
-    <!-- ✅ wait static TF to be ready -->
-    <param name="start_delay" value="2.0"/>
     <rosparam command="load" file="$(find ptR1_navigation)/config/ekf_localization.yaml"/>
   </node>
 
