@@ -187,6 +187,7 @@ target_link_libraries(static_tf_node
    src/command_receive.py
    src/motionTest1.py
    src/img_ws.py
+   src/imu_tf_listener.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 
