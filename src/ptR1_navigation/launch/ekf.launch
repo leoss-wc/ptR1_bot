@@ -1,5 +1,7 @@
 <launch>
 
+    <node name="imu_tf_listen_node" pkg="test_package" type="imu_tf_listener.py" output="screen"/>
+
   <!-- 🧭 TF Broadcaster แบบมี timestamp สด -->
   <node name="custom_static_tf" pkg="test_package" type="dynamic_static_tf.py" output="screen"/>
 
