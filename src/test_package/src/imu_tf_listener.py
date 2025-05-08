@@ -1,43 +1,30 @@
 #!/usr/bin/env python
 import rospy
 import tf
-from sensor_msgs.msg import Imu
-from sensor_msgs.msg import MagneticField
 
-def imu_callback(msg):
+def lookup_and_print(listener, parent_frame, child_frame):
     try:
-        # ใช้ TF listener เพื่อดึง transform ล่าสุด
-        (trans, rot) = listener.lookupTransform("imu_link", "base_link", rospy.Time(0))
+        # ใช้ rospy.Time(0) เพื่อขอ TF ล่าสุดที่มี ไม่ต้องอิงเวลา stamp
+        (trans, rot) = listener.lookupTransform(parent_frame, child_frame, rospy.Time(0))
 
-        rospy.loginfo("TF (imu_link -> base_link):")
-        rospy.loginfo("  Translation: %s", trans)
-        rospy.loginfo("  Rotation: %s", rot)
-
-        # >>>> คุณสามารถใช้ข้อมูลนี้ประมวลผลเพิ่มเติมได้ที่นี่ <<<<
+        rospy.loginfo("TF [%s → %s]", child_frame, parent_frame)
+        rospy.loginfo("  Translation: x=%.3f, y=%.3f, z=%.3f", *trans)
+        rospy.loginfo("  Rotation (quat): x=%.3f, y=%.3f, z=%.3f, w=%.3f", *rot)
 
     except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException) as e:
-        rospy.logwarn("TF lookup failed: %s", e)
+        rospy.logwarn("TF lookup failed [%s → %s]: %s", child_frame, parent_frame, str(e))
 
-def mag_callback(msg):
-    try:
-        (trans, rot) = listener.lookupTransform("mag_link", "base_link", rospy.Time(0))
-        rospy.loginfo("TF (mag_link -> base_link):")
-        rospy.loginfo("  Translation: %s", trans)
-        rospy.loginfo("  Rotation: %s", rot)
-
-        # >>>> ประมวลผลค่าจาก msg กับ TF ได้ที่นี่ <<<<
-
-    except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException) as e:
-        rospy.logwarn("TF lookup (mag_link -> base_link) failed: %s", e)
-
-if __name__ == '__main__':
-    rospy.init_node('imu_tf_listener')
+def main():
+    rospy.init_node('imu_tf_monitor')
     listener = tf.TransformListener()
 
-    # subscribe ข้อมูล IMU จาก topic ที่คุณใช้จริง เช่น /imu/data_raw
-    rospy.Subscriber("/imu/data_raw", Imu, imu_callback)
-    # subscribe ข้อมูล MagneticField จาก topic ที่คุณใช้จริง เช่น /imu/mag
-    rospy.Subscriber("/imu/mag", MagneticField, mag_callback)
+    rate = rospy.Rate(1.0)  # 1 Hz
+    rospy.loginfo("🔍 Monitoring TF: imu_link → base_link and mag_link → base_link")
 
+    while not rospy.is_shutdown():
+        lookup_and_print(listener, "base_link", "imu_link")
+        lookup_and_print(listener, "base_link", "mag_link")
+        rate.sleep()
 
-    rospy.spin()
+if __name__ == '__main__':
+    main()
