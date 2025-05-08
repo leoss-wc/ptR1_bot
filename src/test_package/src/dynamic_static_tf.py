@@ -2,11 +2,16 @@
 import rospy
 import tf2_ros
 import geometry_msgs.msg
+from sensor_msgs.msg import Imu
+
+br = None
+imu_tf = None
+mag_tf = None
 
 def create_static_tf(child, parent, x, y, z):
     tf = geometry_msgs.msg.TransformStamped()
-    tf.header.frame_id = parent        # ✅ base_link เป็น parent
-    tf.child_frame_id = child          # ✅ imu_link เป็น child
+    tf.header.frame_id = parent     
+    tf.child_frame_id = child         
     tf.transform.translation.x = x
     tf.transform.translation.y = y
     tf.transform.translation.z = z
@@ -16,22 +21,21 @@ def create_static_tf(child, parent, x, y, z):
     tf.transform.rotation.w = 1.0
     return tf
 
+def imu_callback(msg):
+    # ใช้เวลา stamp ของ IMU จริง!
+    stamp = msg.header.stamp
+    imu_tf.header.stamp = stamp
+    mag_tf.header.stamp = stamp
+    br.sendTransform([imu_tf, mag_tf])
+
 if __name__ == '__main__':
     rospy.init_node('custom_static_tf_publisher')
     br = tf2_ros.StaticTransformBroadcaster()
-    rate = rospy.Rate(1)
 
-    # ✅ ส่ง TF: base_link → imu_link (x = +0.09 → imu อยู่ด้านหน้าฐาน)
     imu_tf = create_static_tf("imu_link", "base_link", 0.09, 0.01, 0.24)
-
-    # ✅ ส่ง TF: base_link → mag_link
     mag_tf = create_static_tf("mag_link", "base_link", 0.03, 0.02, 0.24)
 
-    rospy.sleep(1.0)
+    # Subscribe แค่ใช้เวลาจาก IMU ในการ broadcast TF ให้ตรงกัน
+    rospy.Subscriber("/imu/data_raw", Imu, imu_callback)
 
-    while not rospy.is_shutdown():
-        now = rospy.Time.now()
-        imu_tf.header.stamp = now
-        mag_tf.header.stamp = now
-        br.sendTransform([imu_tf, mag_tf])
-        rate.sleep()
+    rospy.spin()
