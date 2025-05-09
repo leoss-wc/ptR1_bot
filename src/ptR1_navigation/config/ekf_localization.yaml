@@ -11,13 +11,14 @@ world_frame: odom #หมายถึงว่า EKF คำนวณ odom → b
 
 # ====== Odometry ======
 odom0: /wheel_odom
-odom0_config: [true,  true,  false,   # x, y, z
+odom0_config: [false, false, false,  # x, y, z ❌ ไม่เปิด pose
                false, false, false,  # roll, pitch, yaw
-               true,  true,  false,  # vx, vy, vz
-               false, false, true,   # wx, wy, wz (yaw rate)
-               false, false, false]  # ax, ay, az
+               true,  true,  false,  # vx, vy, vz ✅ ใช้ velocity
+               false, false, true,   # wx, wy, wz ✅ ใช้ yaw rate
+               false, false, false]
 
-odom0_differential: false
+
+odom0_differential: true 
 odom0_relative: false
 odom0_queue_size: 10
 
