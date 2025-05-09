@@ -50,9 +50,30 @@ class TransferData:
         odom_msg.pose.pose.orientation = self._to_orientation(self.th)
 
         odom_msg.twist.twist = msg
-        # 👇 คงไว้เหมือนเดิม
-        odom_msg.twist.covariance = [...]
-        odom_msg.pose.covariance = [...]
+
+        # ✅ ใส่ค่าความเชื่อมั่นของ twist (velocity)
+        odom_msg.twist.covariance = [
+            0.01, 0,    0, 0, 0, 0,
+            0,    0.01, 0, 0, 0, 0,
+            0,    0,    0.1,0, 0, 0,
+            0,    0,    0, 0.1,0, 0,
+            0,    0,    0, 0, 0.1,0,
+            0,    0,    0, 0, 0, 0.2
+        ]
+
+        # ✅ เพิ่มค่าความเชื่อมั่นของ pose (แม้จะไม่มีตำแหน่งจริง)
+        odom_msg.pose.covariance = [
+            0.01, 0,    0, 0, 0, 0,
+            0,    0.01, 0, 0, 0, 0,
+            0,    0,    0.1,0, 0, 0,
+            0,    0,    0, 0.1,0, 0,
+            0,    0,    0, 0, 0.1,0,
+            0,    0,    0, 0, 0, 0.2
+        ]
+
+        # ✅ ใส่ orientation.w ให้ไม่เป็น 0 เพื่อไม่ให้ quaternion invalid
+        odom_msg.pose.pose.orientation.w = 1.0
+        
 
         self.pub_odom.publish(odom_msg)
         self.last_time = current_time
