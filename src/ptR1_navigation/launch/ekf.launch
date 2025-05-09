@@ -1,15 +1,16 @@
 <launch>
 
   <!-- 🧭 TF Broadcaster แบบมี timestamp สด -->
-  <node name="custom_static_tf" pkg="test_package" type="dynamic_static_tf.py" output="screen"/>
+  <node name="dynamic_tf_broadcaster" pkg="test_package" type="dynamic_static_tf.py" output="screen"/>
 
   <!-- 🔌 ROSSerial (ส่ง IMU, Mag, Odom) -->
   <node name="transfer_data_node" pkg="test_package" type="transfer_data.py" output="screen">
     <param name="param1" value="default_value"/>
   </node>
 
-  <!-- 🤖 EKF Localization -->
-  <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization" output="screen">
+  <!-- 🤖 EKF Localization (เริ่มหลัง TF 1 วินาที) -->
+  <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization" output="screen"
+        launch-prefix="bash -c 'sleep 1; exec '">
     <param name="use_sim_time" value="false"/>
     <param name="odom_frame" value="odom"/>
     <param name="base_link_frame" value="base_link"/>
