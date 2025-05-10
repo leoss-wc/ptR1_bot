@@ -1,0 +1,11 @@
+<launch>
+
+  <node name="dynamic_tf_broadcaster" pkg="test_package" type="dynamic_static_tf.py" output="screen"/>
+  
+  <!-- 🤖 EKF Localization (เริ่มหลัง TF 1 วินาที) -->
+  <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization" output="screen">
+    <param name="use_sim_time" value="false"/>
+    <rosparam command="load" file="$(find ptR1_navigation)/config/ekf_localization.yaml"/>
+  </node>
+
+</launch>

@@ -1,0 +1,8 @@
+digraph G {
+"base_link" -> "imu_link"[label="Broadcaster: /dynamic_tf_broadcaster\nAverage rate: 54.512 Hz\nMost recent transform: 1746887903.146 ( 0.026 sec old)\nBuffer length: 4.971 sec\n"];
+"base_link" -> "mag_link"[label="Broadcaster: /dynamic_tf_broadcaster\nAverage rate: 54.512 Hz\nMost recent transform: 1746887903.146 ( 0.026 sec old)\nBuffer length: 4.971 sec\n"];
+edge [style=invis];
+ subgraph cluster_legend { style=bold; color=black; label ="view_frames Result";
+"Recorded at time: 1746887903.173"[ shape=plaintext ] ;
+ }->"base_link";
+}

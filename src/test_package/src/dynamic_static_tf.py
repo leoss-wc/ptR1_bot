@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 import rospy
 import tf2_ros
-import tf
 import geometry_msgs.msg
-from sensor_msgs.msg import Imu
+from sensor_msgs.msg import Imu\
 
 br = None
 imu_tf = None
@@ -24,14 +23,19 @@ def create_tf(child, parent, x, y, z):
 
 def imu_callback(msg):
     stamp = msg.header.stamp
+    stamp = msg.header.stamp
+
+    imu_tf = create_tf("imu_link", "base_link", 0.09, 0.01, 0.24)
     imu_tf.header.stamp = stamp
+
+    mag_tf = create_tf("mag_link", "base_link", 0.03, 0.02, 0.24)
     mag_tf.header.stamp = stamp
+
     br.sendTransform([imu_tf, mag_tf])
 
 if __name__ == '__main__':
     rospy.init_node('dynamic_tf_broadcaster')
 
-    # ❗️ใช้ TransformBroadcaster ไม่ใช่ StaticTransformBroadcaster
     br = tf2_ros.TransformBroadcaster()
 
     imu_tf = create_tf("imu_link", "base_link", 0.09, 0.01, 0.24)
