@@ -4,6 +4,9 @@
   <node name="dynamic_tf_broadcaster" pkg="test_package" type="dynamic_static_tf.py" output="screen" />
      -->
   <!-- 🔌 ROSSerial (/robot_velocity ==> /wheel_odom) -->
+
+
+  
 <node name="transfer_data_node" pkg="test_package" type="transfer_data.py" output="screen" />
 
 
