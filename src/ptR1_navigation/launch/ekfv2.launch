@@ -1,11 +1,13 @@
 <launch>
 
-  <node name="dynamic_tf_broadcaster" pkg="test_package" type="dynamic_static_tf.py" output="screen"/>
-  
-  <!-- 🤖 EKF Localization (เริ่มหลัง TF 1 วินาที) -->
-  <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization" output="screen">
-    <param name="use_sim_time" value="false"/>
-    <rosparam command="load" file="$(find ptR1_navigation)/config/ekf_localization.yaml"/>
+
+ <node name="send_uint32_once" pkg="my_package" type="send_uint32_once.py" output="screen"/>
+
+<node pkg="tf" type="static_transform_publisher" name="mag_tf"
+      args="0.03 0.02 0.24 0 0 0 base_link mag_link 100" />
+
+  <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization_node" output="screen">
+    <rosparam command="load" file="$(find ptR1_navigation)/config/ekf_localization.yaml" />
   </node>
 
 </launch>

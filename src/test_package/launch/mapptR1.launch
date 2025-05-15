@@ -58,6 +58,6 @@
     <param name="stt" value="0.04"/>           <!-- Noise odom: rotation -->
   </node>
 
-  <!-- RViz (optional) 
+  <!-- RViz 
   <node pkg="rviz" type="rviz" name="rviz" args="-d $(find test_package)/rviz/slam_config.rviz"/> -->
 </launch>

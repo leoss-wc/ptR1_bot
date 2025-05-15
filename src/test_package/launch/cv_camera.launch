@@ -5,7 +5,7 @@
     <param name="image_height" value="480"/>
     <param name="fps" value="30"/>
     <param name="frame_id" value="camera_frame"/>
-    <param name="pixel_format" value="mjpeg"/>   <!-- สำคัญ! -->
+    <param name="pixel_format" value="mjpeg"/>  
     <param name="use_camera_info" value="false"/>
   </node>
 </launch>

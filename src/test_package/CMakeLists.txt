@@ -146,7 +146,6 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 #add_executable(${PROJECT_NAME}_node src/test_package_nde.cpp)
-add_executable(static_tf_node src/static_tf.cpp)
 add_executable(image_ws_node src/image_ws_streamer.cpp)
 
 ## Rename C++ executable without prefix
@@ -188,7 +187,7 @@ target_link_libraries(static_tf_node
    src/motionTest1.py
    src/img_ws.py
    src/imu_tf_listener.py
-   src/dynamic_static_tf.py
+   src/send_uint32_once.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 

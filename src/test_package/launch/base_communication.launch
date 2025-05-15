@@ -16,7 +16,7 @@
         <param name="image_height" value="480"/>
         <param name="fps" value="15"/>
         <param name="frame_id" value="camera_frame"/>
-        <param name="pixel_format" value="mjpeg"/>   <!-- Force MJPEG for better speed -->
+        <param name="pixel_format" value="mjpeg"/>  
         <param name="use_camera_info" value="false"/>
     </node>
 

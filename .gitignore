@@ -3,3 +3,7 @@ devel/
 install/
 src/ydlidar_ros_driver/
 src/robot_description
+src/test_package/src/imu_tf_listener.py
+src/test_package/src/wss_image_stream_node.cpp
+src/test_package/src/status.py.cpp
+src/test_package/src/dynamic_static_tf.py
