@@ -168,9 +168,9 @@ target_link_libraries(image_ws_node
   ${Boost_INCLUDE_DIRS}
 )
 
-target_link_libraries(static_tf_node 
-  ${catkin_LIBRARIES}
-)
+#target_link_libraries( 
+ # ${catkin_LIBRARIES}
+#)
 
 #############
 ## Install ##
@@ -188,6 +188,7 @@ target_link_libraries(static_tf_node
    src/img_ws.py
    src/imu_tf_listener.py
    src/send_uint32_once.py
+   src/mecanum_velocity_node.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 
