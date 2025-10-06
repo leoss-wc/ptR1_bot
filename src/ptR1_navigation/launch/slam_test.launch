@@ -1,0 +1,10 @@
+<launch>
+  <node name="slam_toolbox" pkg="slam_toolbox" type="async_slam_toolbox_node" output="screen">
+    
+    <rosparam file="$(find ptR1_navigation)/config/slam_test.yaml" command="load" />
+
+    <remap from="scan" to="/scan"/>
+    <remap from="map" to="/rb/slam/map"/>
+
+  </node>
+</launch>

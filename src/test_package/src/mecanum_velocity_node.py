@@ -1,87 +1,98 @@
 #!/usr/bin/env python
 import rospy
-from std_msgs.msg import UInt32
-from geometry_msgs.msg import Twist
+from std_msgs.msg import Int32
+from nav_msgs.msg import Odometry
 
-class MecanumVelocityNode:
+class MecanumOdometryNode:
     def __init__(self):
         rospy.init_node('mecanum_velocity_node')
 
         # Robot parameters
-        self.r = 0.04  # wheel radius (meters)
-        self.l1 = 0.1075  # center to left/right
-        self.l2 = 0.0825  # center to front/back
-        self.PPR = 660.0  # pulses per revolution
-        self.dt = 0.02  # 50 Hz
+        self.r = rospy.get_param("~wheel_radius", 0.04)
+        self.l1 = rospy.get_param("~l1", 0.105)
+        self.l2 = rospy.get_param("~l2", 0.0825)
+        self.PPR = rospy.get_param("~ppr", 660.0)
+        self.dt = rospy.get_param("~update_dt", 0.02)
 
-        # Previous encoder values
-        self.prev_FL = None
-        self.prev_FR = None
-        self.prev_RL = None
-        self.prev_RR = None
+        # Encoder values
+        self.enc = {'FL': None, 'FR': None, 'RL': None, 'RR': None}
+        self.prev = {'FL': None, 'FR': None, 'RL': None, 'RR': None}
 
-        # Current encoder values
-        self.enc_FL = None
-        self.enc_FR = None
-        self.enc_RL = None
-        self.enc_RR = None
+        # Compensation scale factors (default = 1.0)
+        self.scale = {
+            'FL': rospy.get_param("~scale_FL", 1.0000),
+            'FR': rospy.get_param("~scale_FR", 0.9993),
+            'RL': rospy.get_param("~scale_RL", 0.9988),
+            'RR': rospy.get_param("~scale_RR", 0.9974)
+        }
 
-        # Subscribers
-        rospy.Subscriber("encoder1", UInt32, self.enc_cb_FL)
-        rospy.Subscriber("encoder2", UInt32, self.enc_cb_FR)
-        rospy.Subscriber("encoder3", UInt32, self.enc_cb_RL)
-        rospy.Subscriber("encoder4", UInt32, self.enc_cb_RR)
+        enc_topics = {
+            'FL': rospy.get_param("~encoder1_topic", "encoder1"),
+            'FR': rospy.get_param("~encoder2_topic", "encoder2"),
+            'RL': rospy.get_param("~encoder3_topic", "encoder3"),
+            'RR': rospy.get_param("~encoder4_topic", "encoder4")
+        }
 
-        # Publisher
-        self.vel_pub = rospy.Publisher("/robot_velocity_raspi", Twist, queue_size=10)
+        for key in ['FL', 'FR', 'RL', 'RR']:
+            rospy.Subscriber(enc_topics[key], Int32, lambda msg, k=key: self.enc_cb(k, msg))
 
-        # Timer
+        self.odom_pub = rospy.Publisher("/wheel_odom_raspi", Odometry, queue_size=10)
+
         rospy.Timer(rospy.Duration(self.dt), self.update_velocity)
 
-    def enc_cb_FL(self, msg): self.enc_FL = msg.data
-    def enc_cb_FR(self, msg): self.enc_FR = msg.data
-    def enc_cb_RL(self, msg): self.enc_RL = msg.data
-    def enc_cb_RR(self, msg): self.enc_RR = msg.data
+    def enc_cb(self, key, msg):
+        self.enc[key] = msg.data
+        if self.prev[key] is None:
+            self.prev[key] = self.enc[key]
 
     def update_velocity(self, event):
-        if None in [self.enc_FL, self.enc_FR, self.enc_RL, self.enc_RR]:
-            return  # ยังไม่มีข้อมูลครบ 4 ล้อ
-
-        # แปลงเป็น delta pulse
-        if None in [self.prev_FL, self.prev_FR, self.prev_RL, self.prev_RR]:
-            self.prev_FL, self.prev_FR = self.enc_FL, self.enc_FR
-            self.prev_RL, self.prev_RR = self.enc_RL, self.enc_RR
+        if None in self.enc.values():
             return
 
-        dFL = self.enc_FL - self.prev_FL
-        dFR = self.enc_FR - self.prev_FR
-        dRL = self.enc_RL - self.prev_RL
-        dRR = self.enc_RR - self.prev_RR
+        # delta pulse
+        delta = {
+            key: (self.enc[key] - self.prev[key]) * self.scale[key]
+            for key in self.enc
+        }
 
-        self.prev_FL, self.prev_FR = self.enc_FL, self.enc_FR
-        self.prev_RL, self.prev_RR = self.enc_RL, self.enc_RR
+        for key in self.enc:
+            self.prev[key] = self.enc[key]
 
         # pulse → angular velocity (rad/s)
-        w_FL = (dFL / self.PPR) * 2 * 3.14159265 / self.dt
-        w_FR = (dFR / self.PPR) * 2 * 3.14159265 / self.dt
-        w_RL = (dRL / self.PPR) * 2 * 3.14159265 / self.dt
-        w_RR = (dRR / self.PPR) * 2 * 3.14159265 / self.dt
+        def pulse_to_rad(pulse): return (pulse / self.PPR) * 2 * 3.14159265 / self.dt
+        w = {key: pulse_to_rad(delta[key]) for key in delta}
 
         # Mecanum inverse kinematics
-        vx = (self.r / 4.0) * (w_FL + w_FR + w_RL + w_RR)
-        vy = (self.r / 4.0) * (-w_FL + w_FR + w_RL - w_RR)
-        omega = (self.r / (4.0 * (self.l1 + self.l2))) * (-w_FL + w_FR - w_RL + w_RR)
+        vx = (self.r / 4.0) * (w['FL'] + w['FR'] + w['RL'] + w['RR'])
+        vy = (self.r / 4.0) * (-w['FL'] + w['FR'] + w['RL'] - w['RR'])
+        omega = (self.r / (4.0 * (self.l1 + self.l2))) * (-w['FL'] + w['FR'] - w['RL'] + w['RR'])
 
-        # Publish
-        twist = Twist()
-        twist.linear.x = vx
-        twist.linear.y = vy
-        twist.angular.z = omega
-        self.vel_pub.publish(twist)
+        # Publish odometry
+        odom = Odometry()
+        odom.header.stamp = rospy.Time.now()
+        odom.header.frame_id = "odom"
+        odom.child_frame_id = "base_link"
+        odom.twist.twist.linear.x = vx
+        odom.twist.twist.linear.y = vy
+        odom.twist.twist.angular.z = omega
+
+        odom.twist.covariance = [
+            0.01, 0,    0, 0, 0, 0,
+            0,    0.01, 0, 0, 0, 0,
+            0,    0,    999, 0, 0, 0,
+            0,    0,    0, 999, 0, 0,
+            0,    0,    0, 0, 999, 0,
+            0,    0,    0, 0, 0, 0.1
+        ]
+
+        self.odom_pub.publish(odom)
+
+        # Optional: debug
+        rospy.logdebug(f"vx={vx:.3f}, vy={vy:.3f}, omega={omega:.3f}")
 
 if __name__ == '__main__':
     try:
-        MecanumVelocityNode()
+        MecanumOdometryNode()
         rospy.spin()
     except rospy.ROSInterruptException:
         pass

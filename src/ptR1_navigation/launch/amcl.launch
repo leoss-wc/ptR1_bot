@@ -11,5 +11,7 @@
     <param name="resample_interval" value="1"/>
     <param name="kld_err" value="0.05"/>
     <param name="kld_z" value="0.99"/>
+
+    <remap from="scan" to="/scan"/>
   </node>
 </launch>

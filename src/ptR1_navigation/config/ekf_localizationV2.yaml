@@ -14,7 +14,7 @@ publish_acceleration: false  # ไม่ต้อง publish acc
 output_frame: odom
 
 # ====== Odometry ======
-odom0: /wheel_odom
+odom0: /wheel_odom_raspi
 odom0_config: [false, false, false,  # x, y, z ❌ ไม่เปิด pose
                false, false, false,  # roll, pitch, yaw
                true,  true,  false,  # vx, vy, vz ✅ ใช้ velocity
@@ -27,16 +27,16 @@ odom0_relative: false
 odom0_queue_size: 10
 
 # ====== IMU - MPU6050 ======
-#imu0: /imu/data_raw
-#imu0_config: [false, false, false,
-#              false, false, false,  
-#              false, false, false,
-#              false, false, false,   
-#              false, false, false]
+imu0: /imu/data_raw
+imu0_config: [false, false, false,  # x, y, z
+             false, false, false,  # roll, pitch, yaw
+             false, false, false,  # vx, vy, vz
+             true,  true,  true,   # Vroll, Vpitch, Vyaw 
+             false, false, false]  # ax, ay, az
 
-#imu0_differential: false     # เป็น false ถ้า orientation มาจาก absolute sensor
-#imu0_relative: false         # เป็น false เช่นกัน ถ้า orientation เป็น absolute
-#imu0_queue_size: 10
+imu0_differential: false     # เป็น false ถ้า orientation มาจาก absolute sensor
+imu0_relative: false         # เป็น false เช่นกัน ถ้า orientation เป็น absolute
+imu0_queue_size: 10
 
 # ====== IMU1 - Compass (QMC5883) ======
 imu1: /imu/mag

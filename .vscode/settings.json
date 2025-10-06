@@ -66,5 +66,6 @@
         "typeinfo": "cpp",
         "variant": "cpp",
         "bit": "cpp"
-    }
+    },
+    "cmake.sourceDirectory": "/home/patrolR1/ptR1_ws/src/YDLidar-SDK"
 }
