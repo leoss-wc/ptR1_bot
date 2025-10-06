@@ -71,6 +71,7 @@ find_package(catkin REQUIRED COMPONENTS
    SaveMap.srv
    StartSLAM.srv
    StopSLAM.srv
+   DeleteMap.srv
  )
 
 ## Generate actions in the 'action' folder

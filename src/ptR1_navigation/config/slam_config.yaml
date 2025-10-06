@@ -1,8 +1,6 @@
-# slam_test.yaml (Corrected for ROS 1 / Noetic)
-
 odom_frame: odom
 map_frame: map
-base_frame: base_link      # <-- บรรทัดนี้คือหัวใจสำคัญ
+base_frame: base_link
 scan_topic: /scan
 
 use_scan_matching: true
@@ -11,4 +9,4 @@ transform_timeout: 0.5
     
 minimum_travel_distance: 0.2
 minimum_travel_heading: 0.17
-map_update_interval: 1.0c;e
+map_update_interval: 1.0
