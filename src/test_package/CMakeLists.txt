@@ -16,10 +16,8 @@ find_package(catkin REQUIRED COMPONENTS
   tf
   tf2_ros
   sensor_msgs
-  cv_bridge
 )
 
-find_package(OpenCV REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system thread)
 
 
@@ -129,7 +127,6 @@ catkin_package(
 include_directories(
 # include
   ${catkin_INCLUDE_DIRS}
-  ${OpenCV_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -146,7 +143,6 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 #add_executable(${PROJECT_NAME}_node src/test_package_nde.cpp)
-add_executable(image_ws_node src/image_ws_streamer.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -162,11 +158,6 @@ add_executable(image_ws_node src/image_ws_streamer.cpp)
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
-target_link_libraries(image_ws_node
-  ${catkin_LIBRARIES}
-  ${OpenCV_LIBS}
-  ${Boost_INCLUDE_DIRS}
-)
 
 #target_link_libraries( 
  # ${catkin_LIBRARIES}
@@ -182,11 +173,6 @@ target_link_libraries(image_ws_node
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can cho  <exec_depend>cv_bridge</exec_depend>ose the destination
  catkin_install_python(PROGRAMS
-   src/transfer_data.py
-   src/command_receive.py
-   src/motionTest1.py
-   src/img_ws.py
-   src/send_uint32_once.py
    src/mecanum_velocity_node.py
    src/teleop_keyboard.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

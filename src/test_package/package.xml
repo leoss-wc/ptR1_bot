@@ -60,9 +60,6 @@
   <build_depend>tf</build_depend>
   <build_depend>tf2_ros</build_depend>
   <build_depend>sensor_msgs</build_depend>
-  <build_depend>cv_bridge</build_depend>
-  <build_depend>image_transport</build_depend>
-
   <!-- build_export: ให้แพ็กเกจอื่นที่ build หลังจากนี้ใช้ด้วย -->
   <build_export_depend>roscpp</build_export_depend>
   <build_export_depend>rospy</build_export_depend>
@@ -72,9 +69,6 @@
   <build_export_depend>tf</build_export_depend>
   <build_export_depend>tf2_ros</build_export_depend>
   <build_export_depend>sensor_msgs</build_export_depend>
-  <build_export_depend>cv_bridge</build_export_depend>
-  <build_export_depend>image_transport</build_export_depend>
-
   <!-- exec_depend: ใช้ตอนรัน -->
   <exec_depend>roscpp</exec_depend>
   <exec_depend>rospy</exec_depend>
@@ -84,13 +78,11 @@
   <exec_depend>tf</exec_depend>
   <exec_depend>tf2_ros</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>
-  <exec_depend>image_transport</exec_depend>
+
 
   <build_depend>boost</build_depend>
   <exec_depend>boost</exec_depend>
 
-  <build_depend>opencv</build_depend>
-  <exec_depend>opencv</exec_depend>
 
     
 
