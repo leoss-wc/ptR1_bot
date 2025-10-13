@@ -90,7 +90,10 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate added messages and services with any dependencies listed here
  generate_messages(
   DEPENDENCIES
-  std_msgs #   nav_msgs#   # tf2_geometry_msgs #geometry_msgs
+  std_msgs
+  geometry_msgs 
+  
+  #   nav_msgs#   # tf2_geometry_msgs #
  )
 
 ################################################
@@ -183,6 +186,7 @@ include_directories(
    src/stream_manager_node.py
    src/map_manager_node.py
    src/pose_republisher.py
+   src/mecanum_velocity_node.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 

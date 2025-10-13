@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import rospy
-from std_msgs.msg import Int32
+from std_msgs.msg import Int32MultiArray
 from nav_msgs.msg import Odometry
 
 class MecanumOdometryNode:
@@ -12,7 +12,7 @@ class MecanumOdometryNode:
         self.l1 = rospy.get_param("~l1", 0.105)
         self.l2 = rospy.get_param("~l2", 0.0825)
         self.PPR = rospy.get_param("~ppr", 660.0)
-        self.dt = rospy.get_param("~update_dt", 0.02)
+        self.dt = rospy.get_param("~update_dt", 0.04)
 
         # Encoder values
         self.enc = {'FL': None, 'FR': None, 'RL': None, 'RR': None}
@@ -26,24 +26,27 @@ class MecanumOdometryNode:
             'RR': rospy.get_param("~scale_RR", 0.9974)
         }
 
-        enc_topics = {
-            'FL': rospy.get_param("~encoder1_topic", "encoder1"),
-            'FR': rospy.get_param("~encoder2_topic", "encoder2"),
-            'RL': rospy.get_param("~encoder3_topic", "encoder3"),
-            'RR': rospy.get_param("~encoder4_topic", "encoder4")
-        }
-
-        for key in ['FL', 'FR', 'RL', 'RR']:
-            rospy.Subscriber(enc_topics[key], Int32, lambda msg, k=key: self.enc_cb(k, msg))
 
         self.odom_pub = rospy.Publisher("/wheel_odom_raspi", Odometry, queue_size=10)
-
+        encoders_topic = rospy.get_param("~encoders_topic", "encoders_data")
+        rospy.Subscriber(encoders_topic, Int32MultiArray, self.encoders_array_cb)
         rospy.Timer(rospy.Duration(self.dt), self.update_velocity)
 
-    def enc_cb(self, key, msg):
-        self.enc[key] = msg.data
-        if self.prev[key] is None:
-            self.prev[key] = self.enc[key]
+    def encoders_array_cb(self, msg):
+        # msg.data จะเป็น list ที่มีข้อมูล encoder 4 ค่า ตามลำดับที่เราส่งมาจาก Arduino
+        # [FL, FR, RL, RR]
+        if len(msg.data) == 4:
+            self.enc['FL'] = msg.data[0]
+            self.enc['FR'] = msg.data[1]
+            self.enc['RL'] = msg.data[2]
+            self.enc['RR'] = msg.data[3]
+
+            # ตรวจสอบและกำหนดค่าเริ่มต้นให้กับ prev เหมือนเดิม
+            for key in self.prev:
+                if self.prev[key] is None:
+                    self.prev[key] = self.enc[key]
+        else:
+            rospy.logwarn("Received encoder data with incorrect length.")
 
     def update_velocity(self, event):
         if None in self.enc.values():
@@ -88,7 +91,7 @@ class MecanumOdometryNode:
         self.odom_pub.publish(odom)
 
         # Optional: debug
-        rospy.logdebug(f"vx={vx:.3f}, vy={vy:.3f}, omega={omega:.3f}")
+        #rospy.logdebug(f"vx={vx:.3f}, vy={vy:.3f}, omega={omega:.3f}")
 
 if __name__ == '__main__':
     try:

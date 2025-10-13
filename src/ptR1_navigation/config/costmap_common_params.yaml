@@ -1,31 +1,29 @@
-# ขนาดและรูปร่างหุ่นยนต์
-footprint: [[-0.15, -0.125], [-0.15, 0.125], [0.15, 0.125], [0.15, -0.125]] #ขนาดและรูปร่างของหุ่นยนต์ (พิกัด XY)	[[x1,y1], [x2,y2]]
-#robot_radius: 0.2        # รัศมีของหุ่นยนต์ (ใช้แทน footprint หากทรงกลม)
-transform_tolerance: 0.5  # เวลารอคอยสำหรับข้อมูล tf 0.5 (วินาที)
-resolution: 0.05          #ความละเอียดของ grid ใน costmap 0.05 (เมตร/เซลล์)
+# footprint: คือรูปร่างและขนาดทางกายภาพของหุ่นยนต์ ใช้สำหรับการตรวจสอบการชนอย่างแม่นยำ
+# โดยกำหนดเป็นพิกัด (x, y) ของมุมต่างๆ ของหุ่นยนต์เทียบกับจุดศูนย์กลาง (base_link)
+footprint: [[-0.15, -0.125], [-0.15, 0.125], [0.15, 0.125], [0.15, -0.125]]
 
-# Obstacle Layer (ชั้นสิ่งกีดขวาง)
+# obstacle_layer: คือเลเยอร์ที่ใช้ข้อมูลจากเซ็นเซอร์ (เช่น LIDAR) เพื่อเพิ่ม/ลบ สิ่งกีดขวางแบบ real-time
 obstacle_layer:
-  enabled: true
-  obstacle_range: 2.5       #ระยะที่เซนเซอร์สามารถตรวจจับสิ่งกีดขวางได้	2.5 (เมตร)
-  raytrace_range: 3.0       #ระยะที่เซนเซอร์สามารถลบสิ่งกีดขวางออกได้	3.0 (เมตร)
-  max_obstacle_height: 0.6  #ความสูงสูงสุดของสิ่งกีดขวางที่จะตรวจจับ	0.6 (เมตร)
-  observation_sources: laser_scan  #รายชื่อเซนเซอร์ที่ใช้ตรวจจับสิ่งกีดขวาง	laser_scan sensor
-  laser_scan: {data_type: LaserScan, topic: /scan, marking: true, clearing: true}
+  enabled: true                 # เปิด/ปิด การใช้งานเลเยอร์นี้
+  obstacle_range: 2.5           # ระยะสูงสุดที่หุ่นยนต์จะ "มองเห็น" และเพิ่มสิ่งกีดขวางเข้ามาใน costmap (เมตร)
+  raytrace_range: 3.0           # ระยะสูงสุดที่หุ่นยนต์จะ "เคลียร์" พื้นที่ว่างเมื่อไม่เจอสิ่งกีดขวางแล้ว ควรมีค่ามากกว่าหรือเท่ากับ obstacle_range
+  max_obstacle_height: 0.6      # ความสูงสูงสุดของสิ่งกีดขวางที่จะพิจารณา (เมตร) วัตถุที่สูงกว่านี้จะถูกเมิน (เช่น โต๊ะที่หุ่นยนต์ลอดได้)
+  
+  # observation_sources: รายชื่อของเซ็นเซอร์ที่จะใช้ (สามารถมีหลายตัว คั่นด้วย space)
+  observation_sources: laser_scan
 
-# Inflation Layer  (ชั้นกันชนรอบสิ่งกีดขวาง)
+  # ตั้งค่าสำหรับเซ็นเซอร์ที่ชื่อ laser_scan
+  laser_scan:
+    sensor_frame: laser_frame   # ชื่อ TF frame ของเซ็นเซอร์ LIDAR
+    data_type: LaserScan      # ประเภทของ message ที่เซ็นเซอร์ส่งมา
+    topic: /scan              # ชื่อ topic ที่เซ็นเซอร์เผยแพร่ข้อมูล
+    marking: true             # อนุญาตให้เซ็นเซอร์นี้ "เพิ่ม" สิ่งกีดขวางลงบน costmap
+    clearing: true            # อนุญาตให้เซ็นเซอร์นี้ "ลบ" สิ่งกีดขวางออกจาก costmap (เมื่อสแกนแล้วไม่เจอ)
+    expected_update_rate: 0.2 # ความถี่ที่คาดว่าจะได้รับข้อมูล (1 / Hz ของ LIDAR)
+    min_obstacle_height: 0.05 # ความสูงต่ำสุดของสิ่งกีดขวางที่จะพิจารณา (เมตร) ช่วยให้ไม่สแกนโดนพื้น
+
+# inflation_layer: คือเลเยอร์ที่สร้าง "ระยะกันชน" หรือ "เบาะลม" รอบๆ สิ่งกีดขวาง
 inflation_layer:
-  enabled: true
-  inflation_radius: 0.3  #ระยะกันชนรอบสิ่งกีดขวาง	0.3 (เมตร)
-  cost_scaling_factor: 10.0 #ความชันของค่า cost รอบสิ่งกีดขวาง	10.0
-
-# Static Layer (แผนที่คงที่)
-static_layer:
-  enabled: true #ปิด/ปิดการใช้งาน static map	true / false
-  map_topic: "/map" #ชื่อ topic ที่ใช้ดึงข้อมูลแผนที่	/map
-
-
-#z_resolution	        #ความละเอียดในแนวดิ่ง	0.05 (เมตร)
-#z_voxels	จำนวน voxel #ในแนวดิ่ง	10
-#unknown_threshold	  #จำนวน voxel ที่ต้องถูกระบุว่าไม่รู้จัก	10
-#mark_threshold	      #จำนวน voxel ที่ต้องระบุว่าเป็นสิ่งกีดขวาง	5
+  enabled: true                 # เปิด/ปิด การใช้งานเลเยอร์นี้
+  # cost_scaling_factor: คือความชันของ cost ในระยะกันชน ค่ายิ่งสูงหุ่นยนต์จะยิ่ง "ขี้กลัว" และพยายามอยู่ห่างจากสิ่งกีดขวางมากขึ้น
+  cost_scaling_factor: 10.0

@@ -14,7 +14,7 @@ from ptR1_navigation.srv import (ListMaps, ListMapsResponse, LoadMap, LoadMapRes
                                  DeleteMap, DeleteMapResponse, ResetSLAM, ResetSLAMResponse,
                                  StartPatrol, StartPatrolResponse, PausePatrol, PausePatrolResponse,
                                  ResumePatrol, ResumePatrolResponse, StopPatrol, StopPatrolResponse,
-                                 ClearCostmaps)
+                                 ClearCostmaps, ClearCostmapsResponse)
 
 MAP_FOLDER = os.path.expanduser('~/ptR1_ws/src/ptR1_navigation/maps')
 
@@ -49,6 +49,8 @@ class MapManager:
         rospy.Service('/map_manager/start_slam', StartSLAM, self.handle_start_slam)
         rospy.Service('/map_manager/stop_processes', StopSLAM, self.handle_stop_processes) # ใช้ชื่อใหม่ที่สื่อกว่า
         rospy.Service('/map_manager/reset_slam', ResetSLAM, self.handle_reset_slam)
+        rospy.Service('/map_manager/clear_costmaps', ClearCostmaps, self.handle_clear_costmaps) # <-- เพิ่มบรรทัดนี้
+        
         
         # Patrol Management
         rospy.Service('/map_manager/start_patrol', StartPatrol, self.handle_start_patrol)
@@ -227,15 +229,15 @@ class MapManager:
             return ResetSLAMResponse(False, f"Failed to reset SLAM: {e}")
 
     def handle_clear_costmaps(self, req):
-        rospy.loginfo("Received request to clear costmaps.")
+        rospy.loginfo("Received request to clear costmaps.") 
         service_name = '/move_base/clear_costmaps'
         try:
             rospy.wait_for_service(service_name, timeout=2.0)
             clear_costmaps_service = rospy.ServiceProxy(service_name, Empty)
             clear_costmaps_service()
-            return ClearCostmaps(True, "Costmaps cleared successfully.")
+            return ClearCostmapsResponse(True, "Costmaps cleared successfully.")
         except Exception as e:
-            return ClearCostmaps(False, f"Failed to clear costmaps: {e}")
+            return ClearCostmapsResponse(False, f"Failed to clear costmaps: {e}")
 
     def handle_save_map(self, req):
         name = req.name

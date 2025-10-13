@@ -1,0 +1,47 @@
+# === Planners ===
+# base_global_planner: กำหนด Global Planner ที่จะใช้ในการวางแผนเส้นทางระยะไกล
+# navfn/NavfnROS คือ Planner แบบคลาสสิกที่ใช้ A* หรือ Dijkstra's algorithm
+base_global_planner: "navfn/NavfnROS"
+
+# base_local_planner: กำหนด Local Planner ที่จะใช้ในการควบคุมหุ่นยนต์และหลบหลีกสิ่งกีดขวางเฉพาะหน้า
+# เรากำหนดให้ใช้ TEB Planner ตามที่เราได้ตั้งค่าไว้
+base_local_planner: "base_local_planner/TrajectoryPlannerROS"
+
+# === Frequencies ===
+# planner_frequency: ความถี่ที่ Global Planner จะพยายามวางแผนเส้นทางใหม่ (Hz)
+# ค่า 1.0 หมายถึงจะพยายามวางแผนใหม่ทุกๆ 1 วินาที หากจำเป็น
+# ถ้าตั้งเป็น 0.0 จะวางแผนแค่ครั้งเดียวตอนได้รับ Goal ใหม่เท่านั้น
+planner_frequency: 1.0
+
+# controller_frequency: ความถี่ที่ Local Planner (TEB) จะคำนวณและส่งคำสั่งความเร็ว (Hz)
+# เราลดค่านี้ลงเหลือ 10.0 Hz เพื่อแก้ปัญหา Performance Bottleneck
+controller_frequency: 5.0
+
+# === Recovery Behaviors ===
+# recovery_behavior_enabled: เปิด/ปิด การใช้งานระบบกู้คืนตัวเองเมื่อหุ่นยนต์ติดขัด
+recovery_behavior_enabled: true
+
+# recovery_behaviors: รายการของพฤติกรรมการกู้คืนที่จะทำตามลำดับเมื่อหุ่นยนต์ไปต่อไม่ได้
+recovery_behaviors:
+  - name: 'conservative_reset'
+    type: 'clear_costmap_recovery/ClearCostmapRecovery'
+  - name: 'aggressive_reset'
+    type: 'clear_costmap_recovery/ClearCostmapRecovery'
+
+# ตั้งค่าสำหรับพฤติกรรม conservative_reset (จะทำงานก่อน)
+conservative_reset:
+  reset_distance: 3.0 # เคลียร์ costmap ในรัศมี 3 เมตร รอบหุ่นยนต์
+
+# ตั้งค่าสำหรับพฤติกรรม aggressive_reset (ถ้า conservative ยังไม่สำเร็จ)
+aggressive_reset:
+  reset_distance: 5.0 # เคลียร์ costmap ในรัศมี 5 เมตร (กว้างกว่าเดิม)
+
+# === Oscillation Detection ===
+# พารามิเตอร์สำหรับตรวจจับว่าหุ่นยนต์กำลังเคลื่อนที่กลับไปกลับมา ณ จุดเดิมหรือไม่
+oscillation_timeout: 10.0   # ระยะเวลา (วินาที) ที่จะสรุปว่าหุ่นยนต์กำลัง oscillate
+oscillation_distance: 0.2 # ระยะทาง (เมตร) ที่จะถือว่าเป็นการเคลื่อนที่ในบริเวณเดิมๆ
+
+# === Other Parameters ===
+# shutdown_costmaps: หากเป็น true, costmap จะหยุดทำงานเมื่อไม่มี goal เพื่อประหยัด CPU
+# แต่การตั้งเป็น false จะทำให้หุ่นยนต์ตอบสนองต่อ goal ใหม่ได้ทันทีโดยไม่มี delay
+shutdown_costmaps: false

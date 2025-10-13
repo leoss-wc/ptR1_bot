@@ -1,34 +1,32 @@
 global_costmap:
-  global_frame: map             # กรอบอ้างอิงหลัก (map frame)
-  robot_base_frame: base_link   # กรอบฐานของหุ่นยนต์
-  update_frequency: 5.0         # ความถี่ในการอัปเดต costmap (Hz)
-  publish_frequency: 2.0        # ความถี่ในการเผยแพร่ costmap (Hz)
-  transform_tolerance: 0.5      # เวลารอคอย tf (วินาที)
-  resolution: 0.05              # ความละเอียดของกริด (เมตร/เซลล์)
+  # global_frame: คือกรอบอ้างอิงหลักของโลกที่ไม่เคลื่อนที่ ปกติคือ "map"
+  global_frame: map
+  # robot_base_frame: คือกรอบอ้างอิงที่ติดอยู่กับจุดศูนย์กลางของหุ่นยนต์ ปกติคือ "base_link"
+  robot_base_frame: base_link
+  
+  # update_frequency: ความถี่ในการอัปเดต costmap (Hz) สำหรับ global ไม่ต้องบ่อยมาก
+  update_frequency: 1.0
+  # publish_frequency: ความถี่ในการส่งข้อมูล costmap ออกไปให้ RViz แสดงผล (Hz)
+  publish_frequency: 1.0
+  
+  # transform_tolerance: คือ "ความอดทน" ของ costmap ในการรอข้อมูล TF ที่อาจจะมาช้า (วินาที)
+  transform_tolerance: 1.0
+  
+  # rolling_window: false หมายถึง costmap จะมีขนาดใหญ่ครอบคลุมแผนที่ทั้งหมดและไม่เคลื่อนที่ตามหุ่นยนต์
+  rolling_window: false
 
-  static_map: true              # ใช้ static map จาก map_server
-  rolling_window: false         # false = แผนที่ไม่เคลื่อนที่ตามหุ่นยนต์
+  # plugins: รายการเลเยอร์ที่จะใช้สร้าง costmap นี้ขึ้นมา
+  plugins:
+    - {name: static_layer,    type: "costmap_2d::StaticLayer"}      # เลเยอร์สำหรับแผนที่นิ่งๆ ที่สร้างไว้ล่วงหน้า
+    - {name: obstacle_layer,  type: "costmap_2d::ObstacleLayer"}    # เลเยอร์สำหรับสิ่งกีดขวางที่เจอแบบ real-time
+    - {name: inflation_layer, type: "costmap_2d::InflationLayer"}   # เลเยอร์สำหรับสร้างระยะกันชน
 
-  width: 10.0                   # ความกว้างของ costmap (เมตร) หาก rolling_window = true
-  height: 10.0                  # ความสูงของ costmap (เมตร) หาก rolling_window = true
-
-  plugins:                      # 🧩 เลเยอร์ที่ใช้งานใน global costmap
-    - {name: static_layer,        type: \"costmap_2d::StaticLayer\"}
-    - {name: obstacle_layer,      type: \"costmap_2d::ObstacleLayer\"}
-    - {name: inflation_layer,     type: \"costmap_2d::InflationLayer\"}
-
+  # static_layer: ตั้งค่าเฉพาะสำหรับ static layer
   static_layer:
-    enabled: true
-    map_topic: /map
+    enabled: true           # เปิดใช้งาน
+    map_topic: /map         # หัวข้อ (topic) ที่รับข้อมูลแผนที่มาจาก map_server
 
-  obstacle_layer:
-    enabled: true
-    observation_sources: laser_scan_sensor
-    laser_scan_sensor: {sensor_frame: laser_frame, data_type: LaserScan, topic: /scan, marking: true, clearing: true}
-
+  # inflation_layer: ตั้งค่า inflation เฉพาะสำหรับ global costmap
+  # inflation_radius: คือขนาดของระยะกันชน (เมตร) สำหรับ global มักจะตั้งให้ใหญ่หน่อยเพื่อให้วางแผนเส้นทางที่ปลอดภัยและดู "เผื่อ" ที่จะเลี้ยว
   inflation_layer:
-    enabled: true
-    inflation_radius: 0.3
-    cost_scaling_factor: 5.0
-
-
+    inflation_radius: 0.2

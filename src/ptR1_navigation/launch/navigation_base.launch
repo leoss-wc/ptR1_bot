@@ -1,4 +1,5 @@
 <launch>
+    <param name="/use_sim_time" value="false" />
 
 <!--  base_sysptR1.launch 
     rosserial สำหรับ Arduino Mega และ Nano
@@ -31,9 +32,9 @@
 <!-- ใช้ ekf_localizationV2.yaml
     Odometry ใช้ /wheel_odom_raspi
  -->
-    <include file="$(find ptR1_navigation)/launch/ekfv3.launch" />
     <include file="$(find ptR1_navigation)/launch/G2_lidar.launch" />
  <!--
+    <include file="$(find ptR1_navigation)/launch/ekfv3.launch" />
     <include file="$(find ptR1_navigation)/launch/map_server.launch" />
     <include file="$(find ptR1_navigation)/launch/amcl.launch" />
     -->
