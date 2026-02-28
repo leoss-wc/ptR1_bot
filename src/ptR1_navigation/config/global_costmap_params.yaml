@@ -1,32 +1,33 @@
+# Global Costmap Parameters for ptR1 Robot
 global_costmap:
-  # global_frame: คือกรอบอ้างอิงหลักของโลกที่ไม่เคลื่อนที่ ปกติคือ "map"
-  global_frame: map
-  # robot_base_frame: คือกรอบอ้างอิงที่ติดอยู่กับจุดศูนย์กลางของหุ่นยนต์ ปกติคือ "base_link"
-  robot_base_frame: base_link
-  
-  # update_frequency: ความถี่ในการอัปเดต costmap (Hz) สำหรับ global ไม่ต้องบ่อยมาก
-  update_frequency: 1.0
-  # publish_frequency: ความถี่ในการส่งข้อมูล costmap ออกไปให้ RViz แสดงผล (Hz)
-  publish_frequency: 1.0
-  
-  # transform_tolerance: คือ "ความอดทน" ของ costmap ในการรอข้อมูล TF ที่อาจจะมาช้า (วินาที)
-  transform_tolerance: 1.0
-  
-  # rolling_window: false หมายถึง costmap จะมีขนาดใหญ่ครอบคลุมแผนที่ทั้งหมดและไม่เคลื่อนที่ตามหุ่นยนต์
-  rolling_window: false
+  global_frame: map             # กรอบอ้างอิงหลักของ global costmap มักใช้ "map" เมื่อใช้ AMCL
+  robot_base_frame: base_link   # กรอบฐานของหุ่นยนต์ เช่น "base_link" หรือ "base_footprint"
 
-  # plugins: รายการเลเยอร์ที่จะใช้สร้าง costmap นี้ขึ้นมา
-  plugins:
-    - {name: static_layer,    type: "costmap_2d::StaticLayer"}      # เลเยอร์สำหรับแผนที่นิ่งๆ ที่สร้างไว้ล่วงหน้า
-    - {name: obstacle_layer,  type: "costmap_2d::ObstacleLayer"}    # เลเยอร์สำหรับสิ่งกีดขวางที่เจอแบบ real-time
-    - {name: inflation_layer, type: "costmap_2d::InflationLayer"}   # เลเยอร์สำหรับสร้างระยะกันชน
+  update_frequency: 1.0         # ความถี่ในการอัปเดตข้อมูล costmap (Hz) ยิ่งสูงยิ่ง responsive แต่กิน CPU มากขึ้น
+  publish_frequency: 1.0        # ความถี่ในการเผยแพร่ costmap เพื่อ visualization ใน RViz
 
-  # static_layer: ตั้งค่าเฉพาะสำหรับ static layer
+  transform_tolerance: 0.5      # เวลา buffer ที่จะรอ TF ให้พร้อมก่อนทิ้ง frame (วินาที)
+
+
+  #static_map: true              # ใช้ static map จาก map_server (เหมาะกับระบบ localization อย่าง AMCL)
+  rolling_window: false         # หาก true จะให้ costmap เคลื่อนที่ตามหุ่นยนต์ (เหมาะกับ local costmap เท่านั้น)
+  resolution: 0.05              # ความละเอียดของ grid ใน costmap (เมตร/เซลล์) → ค่าเล็กแม่นยำกว่าแต่ใช้หน่วยความจำมากขึ้น
+
+  track_unknown_space: true    # ถ้าหุ่นไม่รู้พื้นที่ (สีเทาใน Rviz) ห้ามวางแผนผ่าน
+
+  #width: 10.0                   # ความกว้างของ costmap (เมตร) → ใช้เฉพาะเมื่อ rolling_window: true
+  #height: 10.0                  # ความสูงของ costmap (เมตร) → ใช้เฉพาะเมื่อ rolling_window: true
+
+  plugins:                      # รายการ plugin ที่ใช้ใน costmap → static (map), obstacle (เซ็นเซอร์), inflation (กันชน)
+    - {name: static_layer,    type: "costmap_2d::StaticLayer"}        # โหลดข้อมูลจากแผนที่ static (/map)
+    - {name: obstacle_layer,  type: "costmap_2d::ObstacleLayer"}      # ตรวจจับสิ่งกีดขวางจากเซ็นเซอร์จริง
+    - {name: inflation_layer, type: "costmap_2d::InflationLayer"}     # สร้างระยะกันชนรอบสิ่งกีดขวาง
+
   static_layer:
-    enabled: true           # เปิดใช้งาน
-    map_topic: /map         # หัวข้อ (topic) ที่รับข้อมูลแผนที่มาจาก map_server
+    enabled: true              # เปิดใช้งาน static map
+    map_topic: /map            # ชื่อ topic ที่ map_server ส่งแผนที่ออกมา
 
-  # inflation_layer: ตั้งค่า inflation เฉพาะสำหรับ global costmap
-  # inflation_radius: คือขนาดของระยะกันชน (เมตร) สำหรับ global มักจะตั้งให้ใหญ่หน่อยเพื่อให้วางแผนเส้นทางที่ปลอดภัยและดู "เผื่อ" ที่จะเลี้ยว
   inflation_layer:
-    inflation_radius: 0.2
+    enabled: true                     # เปิดใช้งาน inflation layer (พื้นที่กันชน)
+    inflation_radius: 0.55             # ระยะจากสิ่งกีดขวางที่จะใส่ค่า cost เพิ่ม (เมตร)
+    cost_scaling_factor: 2.5          # ความชันของค่า cost รอบ obstacle → ค่ายิ่งสูง หุ่นยนต์ยิ่งหลีกเลี่ยง

@@ -20,6 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf2
   tf2_geometry_msgs
   tf2_ros
+  message_generation
 )
 
 ## System dependencies are found with CMake's conventions
@@ -66,7 +67,7 @@ find_package(catkin REQUIRED COMPONENTS
  add_service_files(
    FILES
     ListMaps.srv
-    LoadMap.srv
+    SelectNavMap.srv
     GetMapFile.srv
     SaveMap.srv
     StartSLAM.srv
@@ -78,6 +79,10 @@ find_package(catkin REQUIRED COMPONENTS
     ResumePatrol.srv
     StopPatrol.srv
     ClearCostmaps.srv
+    StopAMCL.srv
+    StartAMCL.srv
+    SaveEditedMap.srv
+
  )
 
 ## Generate actions in the 'action' folder
@@ -128,7 +133,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES ptR1_navigation
-#  CATKIN_DEPENDS amcl geometry_msgs map_server move_base nav_msgs roscpp rospy std_msgs tf tf2 tf2_geometry_msgs tf2_ros
+CATKIN_DEPENDS amcl geometry_msgs map_server move_base nav_msgs roscpp rospy std_msgs tf tf2 tf2_geometry_msgs tf2_ros message_runtime
 #  DEPENDS system_lib
 )
 
@@ -185,8 +190,7 @@ include_directories(
  catkin_install_python(PROGRAMS
    src/stream_manager_node.py
    src/map_manager_node.py
-   src/pose_republisher.py
-   src/mecanum_velocity_node.py
+   src/navigation_node.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 

@@ -1,41 +1,28 @@
 <launch> 
-   
     <!-- Start ROSBridge WebSocket -->
     <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch"/>
+    <include file="$(find ptR1_navigation)/launch/serial_connection.launch"/>
 
-    <!-- ROSSerial สำหรับ Mega ที่ /dev/ttyUSB0 -->
-    <node pkg="rosserial_python" type="serial_node.py" name="serial_node_mega"
-          output="screen">
-        <param name="port" value="/dev/arduino_mega"/>
-        <param name="baud" value="250000"/>
-    </node>
+    
+    <node pkg="tf2_ros" type="static_transform_publisher" name="mag_tf"
+        args="0.03 0.02 0.24 0 0 0 base_link mag_link " />
+    
+    <node pkg="tf2_ros" type="static_transform_publisher" name="imu_tf"
+        args="0.09 0.01 0.24 0 0 0 base_link imu_link " />
 
+    <node pkg="tf2_ros" type="static_transform_publisher" name="base_to_front_left_wheel"
+    args="0.105 0.0825 0.04 0 0 0 base_link front_left_wheel_link" />
 
-    <!-- ROSSerial สำหรับ Nano ที่ /dev/ttyUSB1 -->
-    <node pkg="rosserial_python" type="serial_node.py" name="serial_node_nano"
-          output="screen">
-        <param name="port" value="/dev/arduino_nano"/>
-        <param name="baud" value="57600"/>
-    </node>
+    <node pkg="tf2_ros" type="static_transform_publisher" name="base_to_front_right_wheel"
+    args="0.105 -0.0825 0.04 0 0 0 base_link front_right_wheel_link" />
 
-     <node pkg="ptR1_navigation" type="mecanum_velocity_node.py" name="mecanum_velocity_node" output="screen">
-    <param name="wheel_radius" value="0.04" />
-    <param name="l1" value="0.1075" />
-    <param name="l2" value="0.0825" />
-    <param name="ppr" value="660" />
-    <param name="update_dt" value="0.04" />
+    <node pkg="tf2_ros" type="static_transform_publisher" name="base_to_rear_left_wheel"
+    args="-0.105 0.0825 0.04 0 0 0 base_link rear_left_wheel_link" />
 
-    <!-- Scale จากค่าที่วัดมา -->
-    <param name="scale_FL" value="1.0000" />
-    <param name="scale_FR" value="0.9993" />
-    <param name="scale_RL" value="0.9988" />
-    <param name="scale_RR" value="0.9974" />
+    <node pkg="tf2_ros" type="static_transform_publisher" name="base_to_rear_right_wheel"
+    args="-0.105 -0.0825 0.04 0 0 0 base_link rear_right_wheel_link" />
 
-    <param name="encoder1_topic" value="encoder1" />
-    <param name="encoder2_topic" value="encoder2" />
-    <param name="encoder3_topic" value="encoder3" />
-    <param name="encoder4_topic" value="encoder4" />
-  </node>
-
-
+        <!-- Static transform publisher for laser frame -->
+    <node pkg="tf2_ros" type="static_transform_publisher" name="base_link_to_laser"
+    args="0 0 0.3 0 0 0 base_link laser_frame "/>
 </launch>

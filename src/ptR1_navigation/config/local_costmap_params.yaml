@@ -1,27 +1,23 @@
+# local Costmap Parameters for ptR1 Robot
 local_costmap:
-  # global_frame: คือกรอบอ้างอิงที่ต่อเนื่องและไม่มีการกระโดด ปกติคือ "odom" เพื่อให้การหลบหลีกราบรื่น
-  global_frame: odom
-  robot_base_frame: base_link
-  
-  # update_frequency: ความถี่ในการอัปเดต costmap (Hz) สำหรับ local ต้องสูงเพื่อตอบสนองต่อสิ่งกีดขวางได้เร็ว
-  update_frequency: 5.0
-  publish_frequency: 2.0
-  
-  # transform_tolerance: ความอดทนในการรอข้อมูล TF
-  transform_tolerance: 1.0
-  
-  # rolling_window: true หมายถึง costmap จะมีขนาดเล็กและ "เคลื่อนที่" ตามหุ่นยนต์ไปตลอดเวลา
-  rolling_window: true
-  width: 2.5              # ความกว้างของหน้าต่าง costmap ที่เคลื่อนที่ (เมตร)
-  height: 2.5             # ความสูงของหน้าต่าง costmap ที่เคลื่อนที่ (เมตร)
-  resolution: 0.05        # ความละเอียดของ costmap ควรตั้งให้ตรงกับ global_costmap
+  global_frame: odom             # กรอบอ้างอิงหลักของ local costmap → ใช้ "odom" สำหรับการคำนวณระยะทางระยะสั้นและการเคลื่อนไหว
+  robot_base_frame: base_link    # กรอบของหุ่นยนต์ที่ใช้เป็นอ้างอิง (เช่น base_link หรือ base_footprint)
 
-  # plugins: รายการเลเยอร์ (สังเกตว่าจะไม่มี static_layer เพราะ local costmap ไม่สนใจแผนที่นิ่งๆ ทั้งหมด)
+  update_frequency: 3.0          # ความถี่ในการอัปเดตข้อมูล costmap (Hz) → ยิ่งสูง หุ่นยนต์ตอบสนองเร็วขึ้น แต่กิน CPU มากขึ้น
+  publish_frequency: 0.5         # ความถี่ในการเผยแพร่ข้อมูล costmap สำหรับ visualization ใน RViz
+
+  static_map: false
+  rolling_window: true           # เปิดใช้ "หน้าต่างเลื่อน" → ทำให้ costmap เคลื่อนที่ตามหุ่นยนต์ เหมาะกับ local planner
+  width: 2.5                     # ความกว้างของ local costmap (เมตร) → กำหนดขนาดกริดรอบหุ่นยนต์
+  height: 2.5                    # ความสูงของ local costmap (เมตร) → ควรเพียงพอให้วาง path ได้รอบตัวหุ่นยนต์
+
+  resolution: 0.1               # ความละเอียดของกริด (เมตร/เซลล์) → ยิ่งเล็กยิ่งแม่นยำแต่ใช้หน่วยความจำมากขึ้น
+  
   plugins:
     - {name: obstacle_layer,  type: "costmap_2d::ObstacleLayer"}
     - {name: inflation_layer, type: "costmap_2d::InflationLayer"}
 
-  # inflation_layer: ตั้งค่า inflation เฉพาะสำหรับ local costmap
-  # inflation_radius: คือขนาดของระยะกันชน (เมตร) สำหรับ local มักจะตั้งให้เล็กกว่า global เพื่อให้หุ่นยนต์ "กล้า" ที่จะเข้าที่แคบได้
   inflation_layer:
-    inflation_radius: 0.15
+    enabled: true
+    inflation_radius: 0.25      # ลดลงจาก Global (0.5) เพื่อให้มุดช่องแคบ/ประตูได้
+    cost_scaling_factor: 5.0    # กราฟ Cost ชันหน่อย เพื่อให้พยายามอยู่กลางๆ ช่อง
