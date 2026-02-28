@@ -8,14 +8,39 @@ import signal
 import socket
 from urllib.parse import urlparse
 from std_srvs.srv import Trigger, TriggerResponse
+import psutil
+from std_msgs.msg import Float32
 
 # --- Global variables ---
 ffmpeg_process = None
 mediamtx_process = None
 is_stream_enabled = False
-is_starting = False # [NEW] ตัวแปรกันซ้อน (Mutex-like)
+is_starting = False # ตัวแปรกันซ้อน (Mutex-like)
 mtx_host = 'localhost'
 mtx_port = 8554
+cpu_pub_ffmpeg = None
+cpu_pub_mediamtx = None
+
+def cpu_monitor_loop(event):
+    global ffmpeg_process, mediamtx_process, cpu_pub_ffmpeg, cpu_pub_mediamtx
+    
+    # 1. ดึง CPU ของ FFmpeg
+    if ffmpeg_process is not None and ffmpeg_process.poll() is None:
+        try:
+            p_ffmpeg = psutil.Process(ffmpeg_process.pid)
+            cpu_usage = p_ffmpeg.cpu_percent(interval=0.1) 
+            cpu_pub_ffmpeg.publish(cpu_usage)
+        except psutil.NoSuchProcess:
+            pass
+
+    # 2. ดึง CPU ของ MediaMTX
+    if mediamtx_process is not None and mediamtx_process.poll() is None:
+        try:
+            p_mtx = psutil.Process(mediamtx_process.pid)
+            cpu_usage = p_mtx.cpu_percent(interval=0.1)
+            cpu_pub_mediamtx.publish(cpu_usage)
+        except psutil.NoSuchProcess:
+            pass
 
 def check_socket_open(host, port, timeout=1):
     try:
@@ -34,8 +59,8 @@ def start_mediamtx():
     rospy.loginfo("MediaMTX is NOT running. Attempting to start...")
 
     # เช็ค Path ให้ดีนะครับ
-    mediamtx_exec = rospy.get_param('~mediamtx_exec', '/home/patrolR1/MediaMtx/mediamtx_v1.14.0_linux_amd64/mediamtx')
-    mediamtx_config = rospy.get_param('~mediamtx_config', '/home/patrolR1/MediaMtx/mediamtx_v1.14.0_linux_amd64/mediamtx.yml')
+    mediamtx_exec = rospy.get_param('~mediamtx_exec', '/home/patrolR1/MediaMtx/mediamtx')
+    mediamtx_config = rospy.get_param('~mediamtx_config', '/home/patrolR1/MediaMtx/mediamtx.yml')
     
     cmd = [mediamtx_exec]
     if mediamtx_config:
@@ -92,32 +117,28 @@ def launch_ffmpeg_stream():
             return False, "MediaMTX unreachable"
         
         device = rospy.get_param('~device', '/dev/video0')
-        bitrate = rospy.get_param('~bitrate', '600k')
+        bitrate = str(rospy.get_param('~bitrate', '600k')) # ครอบ str() ไว้กันเหนียวเผื่อรับค่ามาเป็นตัวเลข
         
-        # [Adjust] FFmpeg Command ปรับจูน
         ffmpeg_command = [
             'ffmpeg',
             '-y',
             '-f', 'v4l2',
-            '-input_format', 'yuyv422', # ลองใช้ Raw (ถ้ากล้องรองรับ) เพื่อลดภาระ Decode
-            # '-input_format', 'mjpeg', # <-- ถ้าภาพไม่ออก ให้กลับมาใช้บรรทัดนี้
-            '-framerate', '30',
+            '-input_format', 'mjpeg',
+            '-framerate', '15',        
             '-video_size', '640x480',
             '-i', device,
+
+            '-c:v', 'libx264',
+            '-preset', 'ultrafast',
+            '-tune', 'zerolatency',
+            '-profile:v', 'baseline',
             
-            # --- Hardware Encoder Settings ---
-            '-c:v', 'h264_v4l2m2m',     # (Hardware Encode)
-            '-b:v', '2000k',            # ต้องระบุ Bitrate เอง (2Mbps กำลังดีสำหรับ 480p)
-            '-pix_fmt', 'yuv420p',
-            
-            # --- Latency Tuning ---
-            '-g', '30',                 # Keyframe ทุก 1 วินาที (กู้ภาพเร็ว)
-            '-keyint_min', '30',        
-            '-bf', '0',                 # ห้ามใช้ B-Frame (ลด Delay)
-            
-            # --- Network ---
+            '-vf', 'format=yuv420p',  
+
+            '-g', '15',                
+            '-b:v', bitrate,      
             '-f', 'rtsp',
-            '-rtsp_transport', 'tcp',   # ใช้ TCP เพื่อความเสถียร (หรือ udp ถ้าเน็ตแรงจัดๆ)
+            '-rtsp_transport', 'tcp',
             rtsp_url
         ]
         rospy.loginfo(f"Executing FFmpeg: {' '.join(ffmpeg_command)}")
@@ -223,13 +244,17 @@ def cleanup():
     mediamtx_process = stop_process(mediamtx_process, "MediaMTX")
 
 def stream_manager_server():
+    global cpu_pub_ffmpeg, cpu_pub_mediamtx
     rospy.init_node('stream_manager_server')
     rospy.on_shutdown(cleanup)
 
+    cpu_pub_ffmpeg = rospy.Publisher('/stream_manager/cpu/ffmpeg', Float32, queue_size=10)
+    cpu_pub_mediamtx = rospy.Publisher('/stream_manager/cpu/mediamtx', Float32, queue_size=10)
     rospy.Service('/stream_manager/start', Trigger, handle_start_stream)
     rospy.Service('/stream_manager/stop', Trigger, handle_stop_stream)
 
     rospy.Timer(rospy.Duration(5), monitor_loop)
+    rospy.Timer(rospy.Duration(2), cpu_monitor_loop)
     
     rospy.loginfo("Stream Manager Ready")
     rospy.spin()

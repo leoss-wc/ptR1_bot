@@ -191,6 +191,8 @@ include_directories(
    src/stream_manager_node.py
    src/map_manager_node.py
    src/navigation_node.py
+   src/triggered_move_test.py
+   src/triggered_rotate_test.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 

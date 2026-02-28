@@ -25,4 +25,11 @@
         <!-- Static transform publisher for laser frame -->
     <node pkg="tf2_ros" type="static_transform_publisher" name="base_link_to_laser"
     args="0 0 0.3 0 0 0 base_link laser_frame "/>
+     <node name="map_manager_node" pkg="ptR1_navigation" type="map_manager_node.py" output="screen" />
+      <node name="navigation_node" pkg="ptR1_navigation" type="navigation_node.py" output="screen" />
+       <node name="stream_manager_node" pkg="ptR1_navigation" type="stream_manager_node.py" output="screen" />
+       <node name="tf2_web_republisher" pkg="tf2_web_republisher" type="tf2_web_republisher" output="screen" />
+       <node name="triggered_move_test" pkg="ptR1_navigation" type="triggered_move_test.py" output="screen" />
+       <node name="triggered_rotate_test" pkg="ptR1_navigation" type="triggered_rotate_test.py" output="screen" />
+       
 </launch>
