@@ -121,7 +121,9 @@ class MapManager:
             rospy.loginfo(f"Executing: {' '.join(command)}")
             self.navigation_process = subprocess.Popen(command)
             self.running_processes.append(self.navigation_process)
-            self.current_map_pub.publish(map_to_load)
+            rospy.Timer(rospy.Duration(3.0), 
+                lambda e: self.current_map_pub.publish(map_to_load), 
+                oneshot=True)
 
             rospy.loginfo(f"Navigation started with map '{map_to_load}'.")
             return SelectNavMapResponse(True, f"Navigation started with map '{map_to_load}'.")
@@ -177,7 +179,7 @@ class MapManager:
         
     def handle_clear_costmaps(self, req):
         rospy.loginfo("Received request to clear costmaps.")
-        service_name = '/map_manager/clear_costmaps'
+        service_name = '/move_base/clear_costmaps'
         try:
             rospy.wait_for_service(service_name, timeout=2.0)
             clear_costmaps_service = rospy.ServiceProxy(service_name, Empty)
@@ -196,24 +198,27 @@ class MapManager:
         rospy.loginfo(f"Saving map to {name}")
         try:
             map_filepath = os.path.join(MAP_FOLDER, name)
-            
-            # 1. Save Map (PGM + YAML)
+
             subprocess.check_call(['rosrun', 'map_server', 'map_saver', '-f', map_filepath, 'map:=/map'])
-            
-            # 2. Convert PGM to PNG (Optional but useful for Web UI)
-            # เช็คก่อนว่าไฟล์ pgm มาจริงไหม
+
             if os.path.exists(f"{map_filepath}.pgm"):
-                subprocess.check_call(['convert', f"{map_filepath}.pgm", f"{map_filepath}.png"])
-                return SaveMapResponse(True, f"Map saved as {name}.pgm and {name}.png")
+                img = cv2.imread(f"{map_filepath}.pgm", cv2.IMREAD_GRAYSCALE)
+                if img is not None:
+                    cv2.imwrite(f"{map_filepath}.png", img)
+                    return SaveMapResponse(True, f"Map saved as {name}.pgm and {name}.png")
+                else:
+                    return SaveMapResponse(False, "Failed to convert PGM to PNG.")
             else:
                 return SaveMapResponse(False, "Map saver failed to create PGM file.")
-                
+
         except Exception as e:
             rospy.logerr(f"Save map error: {e}")
             return SaveMapResponse(False, str(e))
         finally:
-            self.is_saving = False
+            self.is_saving = False  # ✅ คืนค่าเสมอไม่ว่าจะ return ทางไหน
+
         
+              
     def handle_delete_map(self, req):
         map_name = req.name
         rospy.loginfo(f"Received request to delete map: {map_name}")

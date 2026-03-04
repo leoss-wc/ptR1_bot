@@ -9,6 +9,7 @@ from geometry_msgs.msg import PoseWithCovarianceStamped
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from std_srvs.srv import Trigger, TriggerResponse 
 import math
+import copy
 
 # Import Service ที่จำเป็น
 from ptR1_navigation.srv import (StartAMCL, StartAMCLResponse, StopAMCL, StopAMCLResponse,
@@ -40,7 +41,6 @@ class NavigationManager:
         self.is_patrolling = False # ตัวแปรบอกสถานะว่ากำลังอยู่ในโหมด Patrol หรือเปล่า
         self.is_paused = False # ตัวแปรบอกสถานะว่ากำลังหยุดชั่วคราวอยู่หรือเปล่า
         self.should_loop = False # ตัวแปรบอกว่าหมดลิสต์แล้วจะวนใหม่หรือเปล่า
-        self.is_rotating_to_goal = False # ตัวแปรบอกสถานะว่ากำลังหมุนอยู่หรือเปล่า
         
         # --- ROS Comms ---
         self.status_pub = rospy.Publisher('/nav/status', String, queue_size=10)
@@ -75,7 +75,7 @@ class NavigationManager:
         # กรณีได้รับ manual_on -> ให้ Pause Patrol (ถ้ากำลังเดินอยู่)
         if command == 'manual_on':
             if self.is_patrolling and not self.is_paused:
-                rospy.LogInfo("Manual Mode ON: Pausing patrol...")
+                rospy.loginfo("Manual Mode ON: Pausing patrol...")
                 self.is_paused = True
                 self.move_base_client.cancel_goal() # สั่งหยุดหุ่นยนต์
                 self.update_status("paused")
@@ -83,7 +83,7 @@ class NavigationManager:
         # กรณีได้รับ manual_off -> ให้ Resume Patrol (ถ้าต้องการ)
         if self.auto_resume and command == 'manual_off':
             if self.is_patrolling and self.is_paused:
-                rospy.LogInfo("Manual Mode OFF: AUTO Resuming patrol...")
+                rospy.loginfo("Manual Mode OFF: AUTO Resuming patrol...")
                 self.is_paused = False
                 self.send_next_goal() # ส่ง Goal เดิมให้เดินต่อ
     def map_name_callback(self, msg):
@@ -125,13 +125,15 @@ class NavigationManager:
             with open(POSE_FILE, 'w') as f:
                 json.dump(pose_data, f, indent=4)
                 
-            rospy.loginfo(f"💾 Saved last pose to {POSE_FILE}")
+            rospy.loginfo(f"Saved last pose to {POSE_FILE}")
             return True
         except Exception as e:
             rospy.logerr(f"❌ Failed to save pose: {e}")
             return False
 
     def restore_pose(self):
+        if self.current_map_name == "unknown":
+        rospy.logwarn("⚠️ restore_pose: map name still unknown, proceeding with caution.")   
         """อ่านไฟล์ JSON และ Publish ไปยัง /initialpose"""
         if not os.path.exists(POSE_FILE):
             rospy.logwarn("⚠️ No saved pose file found.")
@@ -225,7 +227,6 @@ class NavigationManager:
         self.handle_stop_patrol(None)
         self.goal_list = req.goals
         self.should_loop = req.loop
-        self.is_rotating_to_goal = False
         self.current_goal_index = 0
         self.is_patrolling = True
         self.is_paused = False
@@ -275,75 +276,9 @@ class NavigationManager:
             'w': math.cos(yaw / 2.0)
         }
     
-    def get_yaw_from_quaternion(q):
+    def get_yaw_from_quaternion(self,q):
         """แปลง Quaternion เป็นมุม Yaw"""
         return math.atan2(2.0 * (q.w * q.z + q.x * q.y), 1.0 - 2.0 * (q.y * q.y + q.z * q.z))
-
-    def send_next_goal_with_rotation(self):
-        if not self.is_patrolling or self.is_paused or not self.goal_list:
-            return
-        if self.latest_pose is None:
-            rospy.logwarn("⚠️ Unknown robot pose. Cannot rotate. Sending direct goal.")
-            self.is_rotating_to_goal = False
-        # ตรวจสอบว่าถึงจุดสุดท้ายของลิสต์หรือยัง
-        if self.current_goal_index >= len(self.goal_list):
-            rospy.loginfo("Patrol sequence finished.")
-            self.is_patrolling = False
-            return
-        target_pose_msg = self.goal_list[self.current_goal_index]
-        # ถ้ายังไม่ได้หมุน (และรู้ตำแหน่งตัวเอง) ให้สั่งหมุนก่อน
-        if not self.is_rotating_to_goal and self.latest_pose is not None:
-            rospy.loginfo(f"Rotating towards Goal #{self.current_goal_index + 1}...")
-
-            # 1. ตำแหน่งปัจจุบัน
-            current_x = self.latest_pose.pose.pose.position.x
-            current_y = self.latest_pose.pose.pose.position.y
-            
-            # 2. ตำแหน่งเป้าหมาย
-            target_x = target_pose_msg.pose.position.x
-            target_y = target_pose_msg.pose.position.y
-            
-            # 3. คำนวณมุมที่ต้องหัน (atan2)
-            dx = target_x - current_x
-            dy = target_y - current_y
-            desired_yaw = math.atan2(dy, dx)
-            
-            # 4. สร้าง Rotation Goal (อยู่ที่เดิม แต่หันหน้าใหม่)
-            rotation_goal = MoveBaseGoal()
-            rotation_goal.target_pose.header.frame_id = "map"
-            rotation_goal.target_pose.header.stamp = rospy.Time.now()
-            
-            # อยู่ที่เดิม
-            rotation_goal.target_pose.pose.position.x = current_x
-            rotation_goal.target_pose.pose.position.y = current_y
-            rotation_goal.target_pose.pose.position.z = 0.0
-            
-            # หันหน้าใหม่
-            q = self.get_quaternion_from_yaw(desired_yaw)
-            rotation_goal.target_pose.pose.orientation.x = q['x']
-            rotation_goal.target_pose.pose.orientation.y = q['y']
-            rotation_goal.target_pose.pose.orientation.z = q['z']
-            rotation_goal.target_pose.pose.orientation.w = q['w']
-
-            # 5. ส่งคำสั่งและตั้ง State
-            self.is_rotating_to_goal = True
-            self.move_base_client.send_goal(rotation_goal, done_cb=self.goal_done_callback)
-
-        else:
-            # ถ้าหมุนเสร็จแล้ว (หรือหมุนไม่ได้) ให้สั่งเดินจริง
-            rospy.loginfo(f"Moving to Goal #{self.current_goal_index + 1}")
-            
-            goal = MoveBaseGoal(target_pose=target_pose_msg)
-            
-            if not self.move_base_client.wait_for_server(rospy.Duration(1.0)):
-                rospy.logwarn("move_base server not available.")
-                self.is_paused = True
-                return
-            
-            # ส่งคำสั่งเดินจริง
-            self.update_status("active")
-            self.move_base_client.send_goal(goal, done_cb=self.goal_done_callback)
-    
     def send_next_goal(self):
         # ตรวจสอบความพร้อม
         if not self.is_patrolling or self.is_paused or not self.goal_list:
@@ -351,18 +286,52 @@ class NavigationManager:
             
         # ตรวจสอบว่าจบ Loop หรือยัง
         if self.current_goal_index >= len(self.goal_list):
-            if self.should_loop:
-                rospy.loginfo("Looping patrol...")
-                self.current_goal_index = 0
-            else:
-                rospy.loginfo("Patrol sequence finished.")
-                self.is_patrolling = False
-                self.update_status("idle")
-                return
+            rospy.logwarn("send_next_goal: index out of range, stopping.")
+            self.is_patrolling = False
+            self.update_status("idle")
+            return
 
-        target_pose_msg = self.goal_list[self.current_goal_index]
+        # ใช้ deepcopy เพื่อหลีกเลี่ยงการเขียนทับข้อมูลเป้าหมายเดิม เผื่อต้องการใช้มุมเดิมในอนาคต
+        target_pose_msg = copy.deepcopy(self.goal_list[self.current_goal_index])
+        # LOOK-AHEAD HEADING LOGIC (วิเคราะห์จุดถัดไป)
+
+        next_index = self.current_goal_index + 1
+        has_next_goal = False
         
-        # --- ส่ง Goal ไปให้ MoveBase โดยตรง (ตัดส่วนหมุนตัวทิ้ง) ---
+        # เช็คว่ามีเป้าหมายถัดไปใน Array หรือไม่
+        if next_index < len(self.goal_list):
+            next_pose_msg = self.goal_list[next_index]
+            has_next_goal = True
+        # ถ้าไม่มีจุดถัดไป แต่เปิดโหมด Loop ไว้ จุดถัดไปก็คือจุดที่ 0
+        elif self.should_loop and len(self.goal_list) > 1:
+            next_pose_msg = self.goal_list[0]
+            has_next_goal = True
+            
+        if has_next_goal:
+            current_goal_x = target_pose_msg.pose.position.x
+            current_goal_y = target_pose_msg.pose.position.y
+            next_goal_x = next_pose_msg.pose.position.x
+            next_goal_y = next_pose_msg.pose.position.y
+            
+            # คำนวณระยะห่างระหว่างจุด (เผื่อกรณีคนเซฟจุดซ้อนกัน ป้องกัน error หารด้วย 0)
+            dist = math.hypot(next_goal_x - current_goal_x, next_goal_y - current_goal_y)
+            
+            if dist > 0.05:  # ถ้าระยะห่างมากกว่า 5 เซนติเมตร ถึงจะยอมคำนวณมุม
+                # คำนวณมุม (Yaw) จากจุดปัจจุบัน ชี้ไปยังจุดถัดไป
+                lookahead_yaw = math.atan2(next_goal_y - current_goal_y, next_goal_x - current_goal_x)
+                q = self.get_quaternion_from_yaw(lookahead_yaw)
+                
+                # เขียนทับ Orientation (การหันหน้า) ของจุดเป้าหมายนี้
+                target_pose_msg.pose.orientation.x = q['x']
+                target_pose_msg.pose.orientation.y = q['y']
+                target_pose_msg.pose.orientation.z = q['z']
+                target_pose_msg.pose.orientation.w = q['w']
+                
+                next_id = next_index if next_index < len(self.goal_list) else 0
+                rospy.loginfo(f"🧭 Look-ahead Active: Pre-aligning heading towards Goal #{next_id + 1}")
+        # ==========================================
+        
+        # --- ส่ง Goal ไปให้ MoveBase ---
         rospy.loginfo(f"Moving to Goal #{self.current_goal_index + 1}")
         
         # สร้าง Goal Object
@@ -383,7 +352,6 @@ class NavigationManager:
         self.update_status("active")
         
         # ส่งคำสั่งเดินทันที! 
-        # (DWA Planner จะคำนวณวิถีโค้งเพื่อเลี้ยวไปหาจุดต่อไปเอง โดยไม่หยุดหมุน)
         self.move_base_client.send_goal(goal, done_cb=self.goal_done_callback)
 
     def goal_done_callback(self, status, result):
@@ -400,6 +368,8 @@ class NavigationManager:
                     rospy.Timer(rospy.Duration(0.1), lambda e: self.send_next_goal(), oneshot=True)
                 else:
                     self.is_patrolling = False
+                    self.update_status("idle")
+                    rospy.loginfo("Patrol finished.")
             else:
                 rospy.Timer(rospy.Duration(0.1), lambda e: self.send_next_goal(), oneshot=True)
         elif status == actionlib.GoalStatus.PREEMPTED and self.is_paused:
@@ -521,8 +491,9 @@ class NavigationManager:
         return SaveMapResponse(True, f"Initial pose set to home of {map_name}")
     def cleanup(self):
         # สร้าง Dummy class ง่ายๆ เพื่อส่งค่า save_pose=True
+        self.save_pose_to_file()
         class DummyReq:
-            save_pose = True
+            save_pose = False
         self.handle_stop_nav(DummyReq())
 
 if __name__ == '__main__':

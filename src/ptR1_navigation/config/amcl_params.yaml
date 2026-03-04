@@ -2,11 +2,11 @@
 
 # --- Filter Parameters ---
 min_particles: 200
-max_particles: 1000
+max_particles: 500
 kld_err: 0.05
 kld_z: 0.99
-update_min_d: 0.1          # ขยับ 10cm อัปเดตที
-update_min_a: 0.1          # หมุน 0.1 rad อัปเดตที
+update_min_d: 0.3          # ขยับ 20cm อัปเดตที
+update_min_a: 1.0          # หมุน 0.2 rad อัปเดตที
 resample_interval: 1       # Resample ทุกครั้ง
 transform_tolerance: 0.5   # รอ TF ได้นานสุด 0.5 วิ
 recovery_alpha_slow: 0.001 # ค่าการกู้คืนเมื่อหลงทาง (ช้า)
@@ -14,7 +14,7 @@ recovery_alpha_fast: 0.1   # ค่าการกู้คืนเมื่อ
 gui_publish_rate: 10.0     # ความถี่ส่งข้อมูลไป Rviz (-1.0 เพื่อปิด)
 
 # --- Laser Model Parameters ---
-laser_max_beams: 30        # ลดภาระ CPU (สำคัญ!)
+laser_max_beams: 30       
 laser_z_hit: 0.95
 laser_z_short: 0.1
 laser_z_max: 0.05
@@ -25,12 +25,12 @@ laser_likelihood_max_dist: 2.0
 laser_model_type: "likelihood_field"
 
 # --- Odometry Model Parameters (Mecanum) ---
-odom_model_type: "omni-corrected" # Mecanum ต้องใช้อันนี้
-odom_alpha1: 0.2
-odom_alpha2: 0.2
-odom_alpha3: 0.2
-odom_alpha4: 0.2
-odom_alpha5: 0.2
+odom_model_type: "omni-corrected" 
+odom_alpha1: 0.02   # Noise การหมุนจากการหมุน (Angular Error 1% ใส่เผื่อเป็น 0.02 )
+odom_alpha2: 0.02   # Noise การหมุนจากการเดินหน้า
+odom_alpha3: 0.05   # Noise การเดินหน้าจากการเดินหน้า (Linear X Error  3% ใส่ 0.05 เพื่อเผื่อความลื่น)
+odom_alpha4: 0.02   # Noise การเดินหน้าจากการหมุน
+odom_alpha5: 0.10   # Noise การสไลด์ข้างจากการสไลด์ข้าง (Linear Y Error 6% 0.10 ครับ)
 odom_frame_id: "odom"
 base_frame_id: "base_link"
 global_frame_id: "map"

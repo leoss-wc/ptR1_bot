@@ -82,7 +82,7 @@ find_package(catkin REQUIRED COMPONENTS
     StopAMCL.srv
     StartAMCL.srv
     SaveEditedMap.srv
-
+    UpdateDetection.srv
  )
 
 ## Generate actions in the 'action' folder
@@ -193,6 +193,8 @@ include_directories(
    src/navigation_node.py
    src/triggered_move_test.py
    src/triggered_rotate_test.py
+   src/pi_monitor_node.py
+   src/stream_manager_node2.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 

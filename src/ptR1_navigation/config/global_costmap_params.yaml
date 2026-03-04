@@ -4,7 +4,7 @@ global_costmap:
   robot_base_frame: base_link   # กรอบฐานของหุ่นยนต์ เช่น "base_link" หรือ "base_footprint"
 
   update_frequency: 1.0         # ความถี่ในการอัปเดตข้อมูล costmap (Hz) ยิ่งสูงยิ่ง responsive แต่กิน CPU มากขึ้น
-  publish_frequency: 1.0        # ความถี่ในการเผยแพร่ costmap เพื่อ visualization ใน RViz
+  publish_frequency: 0.5        # ความถี่ในการเผยแพร่ costmap เพื่อ visualization ใน RViz
 
   transform_tolerance: 0.5      # เวลา buffer ที่จะรอ TF ให้พร้อมก่อนทิ้ง frame (วินาที)
 

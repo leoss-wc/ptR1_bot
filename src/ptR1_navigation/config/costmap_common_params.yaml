@@ -32,7 +32,7 @@ obstacle_layer:
 # Inflation Layer (สร้างระยะกันชนรอบ obstacle ด้วย cost ที่ค่อย ๆ ลดลง)
 inflation_layer:
   enabled: true                     # เปิดใช้งาน inflation
-  inflation_radius: 0.35            # รัศมีจาก obstacle ที่จะขยาย cost ออก (เมตร)
+  inflation_radius: 0.5            # รัศมีจาก obstacle ที่จะขยาย cost ออก (เมตร)
   cost_scaling_factor: 3.0        # ความชันของค่า cost → ค่าสูง = หลบมาก, ค่าต่ำ = ผ่านใกล้ obstacle ได้ง่ายขึ้น
 
 

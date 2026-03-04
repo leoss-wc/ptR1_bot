@@ -4,7 +4,7 @@
 base_global_planner: "navfn/NavfnROS"
 
 # base_local_planner: กำหนด Local Planner ที่จะใช้ในการควบคุมหุ่นยนต์และหลบหลีกสิ่งกีดขวางเฉพาะหน้า
-base_local_planner: "dwa_local_planner/DWAPlannerROS"
+base_local_planner: "teb_local_planner/TebLocalPlannerROS"
 
 # === Frequencies ===
 # planner_frequency: ความถี่ที่ Global Planner จะพยายามวางแผนเส้นทางใหม่ (Hz)
@@ -14,7 +14,7 @@ planner_frequency: 0.5
 planner_patience: 5.0 # รอได้ 5 วิถ้า global plan หาทางไม่ได้ ก่อนจะไป Recovery
 
 # controller_frequency: ความถี่ที่ Local Planner จะคำนวณและส่งคำสั่งความเร็ว (Hz)
-controller_frequency: 10.0
+controller_frequency: 8.0
 controller_patience: 15.0    # รอได้ 15 วิถ้า local plan ติดขัด ก่อนจะไป Recovery
 
 # === Oscillation Detection ===

@@ -9,6 +9,6 @@
         <param name="initial_pose_y" value="0.0"/>
         <param name="initial_pose_a" value="0.0"/>
         </node>
-        <include file="$(find ptR1_navigation)/launch/movemove_base_dwa.launch" />
+        <include file="$(find ptR1_navigation)/launch/movemove_base_teb.launch" />
 
 </launch>

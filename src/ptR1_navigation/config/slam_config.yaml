@@ -27,11 +27,11 @@ temporalUpdate: 3.0       # ถ้าหุ่นไม่ขยับเลย 
 resampleThreshold: 0.5
 
 # --- Particle Filter (หัวใจหลักของความแม่นยำ) ---
-particles: 80             # เพิ่มจาก 30 -> 80 (ช่วยแก้ปัญหา Odom เพี้ยนได้ดีมาก)
+particles: 50           # จำนวนอนุภาคในฟิลเตอร์ → ยิ่งมากยิ่งแม่นยำแต่ใช้ CPU มากขึ้น          
 
 # --- Odometry Error (Mecanum ต้องจูนตรงนี้!) ---
 # ค่าความผิดพลาดของ Odom: Mecanum ลื่นกว่าล้อปกติ ให้ใส่ค่าเยอะหน่อย (0.2 - 0.3)
-srr: 0.25  # Translation error from translation (เดินหน้าแล้วระยะเพี้ยน)
-srt: 0.25  # Translation error from rotation (หมุนแล้วตำแหน่งเคลื่อน)
-str: 0.25  # Rotation error from translation (เดินหน้าแล้วตัวหมุนเอง)
-stt: 0.25  # Rotation error from rotation (หมุนแล้วมุมเพี้ยน)
+srr: 0.05  # ความเพี้ยนเดินหน้า (Linear error  3-6% เผื่อไว้ 5% )
+srt: 0.02  # ความเพี้ยนตำแหน่งตอนหมุน (Odom นิ่ง ใส่ 2% )
+str: 0.02  # ความเพี้ยนมุมตอนเดินหน้า 
+stt: 0.02  # ความเพี้ยนมุมตอนหมุน (Angular error 1% ใส่ 2% บ)
