@@ -3,9 +3,10 @@
     <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch"/>
     <include file="$(find ptR1_navigation)/launch/serial_connection.launch"/>
 
-    
+    <!-- Static transform publishers for sensor frames 
     <node pkg="tf2_ros" type="static_transform_publisher" name="mag_tf"
         args="0.03 0.02 0.24 0 0 0 base_link mag_link " />
+        -->
     
     <node pkg="tf2_ros" type="static_transform_publisher" name="imu_tf"
         args="0.09 0.01 0.24 0 0 0 base_link imu_link " />
@@ -21,13 +22,15 @@
 
     <node pkg="tf2_ros" type="static_transform_publisher" name="base_to_rear_right_wheel"
     args="-0.105 -0.0825 0.04 0 0 0 base_link rear_right_wheel_link" />
+    <node pkg="tf2_ros" type="static_transform_publisher" name="base_link_to_footprint"
+    args="0 0 0 0 0 0 base_link base_footprint"/>
 
         <!-- Static transform publisher for laser frame -->
     <node pkg="tf2_ros" type="static_transform_publisher" name="base_link_to_laser"
     args="0 0 0.3 0 0 0 base_link laser_frame "/>
     <node name="map_manager_node" pkg="ptR1_navigation" type="map_manager_node.py" output="screen" />
     <node name="navigation_node" pkg="ptR1_navigation" type="navigation_node.py" output="screen" />
-    <node name="stream_manager_node" pkg="ptR1_navigation" type="stream_manager_node2.py" output="screen" />
+    <node name="stream_manager_node" pkg="ptR1_navigation" type="stream_manager_node.py" output="screen" />
     <node name="tf2_web_republisher" pkg="tf2_web_republisher" type="tf2_web_republisher" output="screen" />
-    <node name="pi_monitor_node" pkg="ptR1_navigation" type="pi_monitor_node.py" output="screen" />
+    <node name="pi_monitor_node" pkg="ptR1_navigation" type="pi_monitor_node.py" output="screen" />S
 </launch>

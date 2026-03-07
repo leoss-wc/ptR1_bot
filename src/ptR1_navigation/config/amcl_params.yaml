@@ -2,16 +2,16 @@
 
 # --- Filter Parameters ---
 min_particles: 200
-max_particles: 500
+max_particles: 800
 kld_err: 0.05
 kld_z: 0.99
-update_min_d: 0.3          # ขยับ 20cm อัปเดตที
-update_min_a: 1.0          # หมุน 0.2 rad อัปเดตที
+update_min_d: 0.1          # ขยับ 20cm อัปเดตที
+update_min_a: 0.5          # หมุน 0.2 rad อัปเดตที
 resample_interval: 1       # Resample ทุกครั้ง
 transform_tolerance: 0.5   # รอ TF ได้นานสุด 0.5 วิ
 recovery_alpha_slow: 0.001 # ค่าการกู้คืนเมื่อหลงทาง (ช้า)
 recovery_alpha_fast: 0.1   # ค่าการกู้คืนเมื่อหลงทาง (เร็ว)
-gui_publish_rate: 10.0     # ความถี่ส่งข้อมูลไป Rviz (-1.0 เพื่อปิด)
+gui_publish_rate: 5.0     # ความถี่ส่งข้อมูลไป Rviz (-1.0 เพื่อปิด)
 
 # --- Laser Model Parameters ---
 laser_max_beams: 30       

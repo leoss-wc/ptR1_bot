@@ -46,6 +46,8 @@ latest_frame = None
 frame_lock = threading.Lock()
 camera_stop_event = threading.Event()
 cam_reader_thread_ref = None
+ai_stats_pub = None
+last_inference_ms = 0.0
 
 # --- Global variables ---
 ffmpeg_process = None
@@ -56,6 +58,7 @@ mtx_host = 'localhost'
 mtx_port = 8554
 cap = None
 model = None
+model_input_name = None 
 prev_frame_gray = None
 
 detection_enabled = False
@@ -86,8 +89,9 @@ def is_frame_usable(frame):
     return 20 < mean_brightness < 240
 
 def init_alert_publisher():
-    global alert_pub
+    global alert_pub, ai_stats_pub
     alert_pub = rospy.Publisher('/stream_manager/alert', String, queue_size=10)
+    ai_stats_pub = rospy.Publisher('/stream_manager/ai_stats', String, queue_size=5)
 
 def publish_alert(class_name, conf):
     global last_alert_time
@@ -112,15 +116,6 @@ def is_night_time(start, end):
     now = datetime.now().hour
     return now >= start or now < end
 
-def should_alert(class_name):
-    with detection_lock:
-        if not detection_enabled:
-            return False
-        if detection_mode == 'manual':
-            return class_name in detection_classes
-        if detection_mode == 'time':
-            return is_night_time(detection_start, detection_end) and class_name in detection_classes
-    return False
 
 def handle_update_detection(req):
     global detection_enabled, detection_mode, detection_start, detection_end, detection_classes
@@ -195,7 +190,7 @@ def launch_ffmpeg_pipe():
     rtsp_url = rospy.get_param('~rtsp_url', 'rtsp://localhost:8554/mystream')
     bitrate = str(rospy.get_param('~bitrate', '600k'))
 
-    ffmpeg_command = [
+    ffmpeg_command2 = [
     'ffmpeg', '-y',
     '-f', 'rawvideo', '-vcodec', 'rawvideo',
     '-s', '640x480', '-pix_fmt', 'bgr24', '-r', '10',
@@ -212,6 +207,26 @@ def launch_ffmpeg_pipe():
     '-rtsp_transport', 'tcp',
     '-muxdelay', '0',    # ✅ ลด mux delay
     '-muxpreload', '0',  # ✅ ลด mux preload
+    rtsp_url
+]
+    ffmpeg_command = [
+    'ffmpeg', '-y',
+    '-f', 'rawvideo', '-vcodec', 'rawvideo',
+    '-s', '640x480', '-pix_fmt', 'bgr24', '-r', '10',
+    '-i', '-',
+    '-vf', "drawtext=text='%{localtime\\:%H\\:%M\\:%S}':fontsize=30:fontcolor=white:box=1:boxcolor=black@0.5:x=10:y=10",
+    '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency',
+    '-profile:v', 'baseline', '-pix_fmt', 'yuv420p',
+    '-g', '5',
+    '-bf', '0',
+    '-refs', '1',
+    '-b:v', bitrate,
+    '-maxrate', bitrate,
+    '-bufsize', '500k',
+    '-f', 'rtsp',
+    '-rtsp_transport', 'tcp',
+    '-muxdelay', '0',
+    '-muxpreload', '0',
     rtsp_url
 ]
 
@@ -289,7 +304,7 @@ def camera_reader_thread():
     rospy.loginfo("camera_reader_thread exited cleanly.")
 
 def handle_start_stream(req):
-    global is_stream_enabled, ffmpeg_process, cap, model, latest_frame, cam_reader_thread_ref
+    global is_stream_enabled, ffmpeg_process, cap, model, latest_frame, cam_reader_thread_ref,model_input_name
     rospy.loginfo("Request to START stream received.")
 
     if is_stream_enabled and ffmpeg_process is not None and ffmpeg_process.poll() is None:
@@ -317,6 +332,7 @@ def handle_start_stream(req):
         sess_options.inter_op_num_threads = 2  
         
         model = ort.InferenceSession(model_path, sess_options=sess_options, providers=['CPUExecutionProvider'])
+        model_input_name = model.get_inputs()[0].name
 
     latest_frame = None
     camera_stop_event.clear()
@@ -356,62 +372,72 @@ def handle_toggle_ai(req):
     rospy.loginfo(msg)
     return TriggerResponse(success=True, message=msg)
 def ai_worker(frame):
-    global cached_boxes, ai_running
+    global cached_boxes, ai_running, last_inference_ms
     try:
         if model is None:
             return
-
-        # 1. Pre-processing: เตรียมรูปภาพ
-        input_width, input_height = 320, 320
-        img = cv2.resize(frame, (input_width, input_height))
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        img = img.transpose((2, 0, 1))  # HWC to CHW
-        img = np.expand_dims(img, axis=0)  # Add batch dimension
-        img = img.astype(np.float32) / 255.0  # Normalize to 0-1
-
-        # 2. Inference: โยนเข้า ONNX
-        input_name = model.get_inputs()[0].name
-        outputs = model.run(None, {input_name: img})
-        predictions = np.squeeze(outputs[0]).T  # Shape: (84, N) -> (N, 84)
-
-        # 3. Post-processing: แกะข้อมูลกรอบ (Bounding Boxes)
-        boxes = []
-        scores = []
-        class_ids = []
-        
-        # สเกลเพื่อขยายกรอบกลับไปที่ขนาดจอจริง (640x480)
+        t0 = time.time()
+        # 1. Pre-processing
         orig_h, orig_w = frame.shape[:2]
-        x_scale = orig_w / input_width
-        y_scale = orig_h / input_height
+        img = cv2.resize(frame, (320, 320))
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        img = (img.transpose((2, 0, 1))[np.newaxis] / 255.0).astype(np.float32)
 
-        for row in predictions:
-            classes_scores = row[4:]
-            class_id = np.argmax(classes_scores)
-            score = classes_scores[class_id]
+        # 2. Inference
+        outputs = model.run(None, {model_input_name: img})
+        last_inference_ms = (time.time() - t0) * 1000
+        predictions = np.squeeze(outputs[0]).T  # (N, 84)
 
-            if score > 0.35: # ค่าความมั่นใจ (Confidence)
-                cx, cy, w, h = row[0:4]
-                
-                # แปลงจุดศูนย์กลางให้เป็น x, y มุมซ้ายบน และขยายสเกล
-                x1 = int((cx - w / 2) * x_scale)
-                y1 = int((cy - h / 2) * y_scale)
-                width = int(w * x_scale)
-                height = int(h * y_scale)
+        # 3. Post-processing แบบ vectorized
+        if len(predictions) == 0:
+            with ai_result_lock:
+                cached_boxes = []
+            return
 
-                boxes.append([x1, y1, width, height])
-                scores.append(float(score))
-                class_ids.append(class_id)
+        classes_scores = predictions[:, 4:]
+        class_ids      = np.argmax(classes_scores, axis=1)
+        scores         = classes_scores[np.arange(len(predictions)), class_ids]
 
-        # 4. Non-Maximum Suppression (ลบกรอบที่ซ้อนทับกัน)
-        indices = cv2.dnn.NMSBoxes(boxes, scores, 0.35, 0.45)
-        
+        # กรอง confidence ต่ำออก
+        mask        = scores > 0.35
+        predictions = predictions[mask]
+        scores      = scores[mask]
+        class_ids   = class_ids[mask]
+
+        if len(predictions) == 0:
+            with ai_result_lock:
+                cached_boxes = []
+            return
+
+        # แปลง cx,cy,w,h → x1,y1,bw,bh พร้อม scale กลับขนาดจริง
+        x_scale = orig_w / 320
+        y_scale = orig_h / 320
+
+        cx = predictions[:, 0]
+        cy = predictions[:, 1]
+        w  = predictions[:, 2]
+        h  = predictions[:, 3]
+
+        x1 = ((cx - w / 2) * x_scale).astype(int)
+        y1 = ((cy - h / 2) * y_scale).astype(int)
+        bw = (w * x_scale).astype(int)
+        bh = (h * y_scale).astype(int)
+
+        boxes_list     = np.stack([x1, y1, bw, bh], axis=1).tolist()
+        scores_list    = scores.tolist()
+        class_ids_list = class_ids.tolist()
+
+        # 4. NMS — ลบกรอบซ้อนทับ
+        indices = cv2.dnn.NMSBoxes(boxes_list, scores_list, 0.35, 0.45)
+
         new_boxes = []
         if len(indices) > 0:
             for i in indices.flatten():
-                x, y, w, h = boxes[i]
-                new_boxes.append([x, y, x + w, y + h, scores[i], class_ids[i]])
+                x, y, bw_, bh_ = boxes_list[i]
+                new_boxes.append([x, y, x + bw_, y + bh_,
+                                  scores_list[i], class_ids_list[i]])
 
-        # 5. อัปเดตกรอบให้ Stream Manager ดึงไปวาด
+        # 5. อัปเดต cache
         with ai_result_lock:
             cached_boxes = new_boxes
 
@@ -419,7 +445,6 @@ def ai_worker(frame):
         rospy.logerr(f"AI Worker Error: {e}")
     finally:
         ai_running = False  # ปลดล็อคเสมอ
-
 
 def cleanup():
     global is_stream_enabled, ffmpeg_process, mediamtx_process, cap, cached_boxes, ai_running, latest_frame
@@ -459,9 +484,9 @@ def stream_manager_server():
 
     rate = rospy.Rate(10)
     frame_counter = 0
+    ai_stats_counter = 0
 
     rospy.Timer(rospy.Duration(5), monitor_loop)
-
     try:
         while not rospy.is_shutdown():
             if is_stream_enabled and ffmpeg_process:
@@ -472,44 +497,58 @@ def stream_manager_server():
                         rate.sleep()
                         continue
                     frame = latest_frame.copy()
-
                 # --- AI LOGIC ---
                 if detection_enabled and model:
                     frame_counter += 1
+                    ai_stats_counter += 1
                     if frame_counter % 7 == 0 and not ai_running:
+                        frame_counter = 0
                         if is_frame_usable(frame) and has_motion(frame):
                             ai_running = True
                             t = threading.Thread(target=ai_worker, args=(frame.copy(),))
                             t.daemon = True
                             t.start()
-                        frame_counter = 0
+                        
+                        if ai_stats_counter >= 10 and ai_stats_pub:  # ทุก 10 วิ (10Hz × 10 = 10วิ)
+                            ai_stats_counter = 0
+                            ai_stats_pub.publish(json.dumps({
+                                'inference_ms':      round(last_inference_ms, 1),
+                                'detection_enabled': detection_enabled,
+                                'mode':              detection_mode
+                            }))
 
                     with ai_result_lock:
                         boxes_to_draw = list(cached_boxes)
+                    with detection_lock:
+                        classes_to_show = list(detection_classes)
+                        _enabled = detection_enabled
+                        _mode    = detection_mode
+                        _start   = detection_start
+                        _end     = detection_end
 
                     for box in boxes_to_draw:
                         x1, y1, x2, y2, conf, cls = box
                         class_name = COCO_CLASSES.get(int(cls), f"Unknown_{int(cls)}")
-                        #ข้ามถ้า class ไม่ได้อยู่ใน detection_classes
-                        with detection_lock:
-                            classes_to_show = list(detection_classes)
                         if class_name not in classes_to_show:
                             continue
 
-                        # เช็คเงื่อนไข alert
-                        if should_alert(class_name):
-                            color = (0, 0, 255)     # แดง — alert
-                            thickness = 3
+                        alert = False
+                        if _enabled:
+                            if _mode == 'manual':
+                                alert = True
+                            elif _mode == 'time':
+                                alert = is_night_time(_start, _end)
+
+                        if alert:
+                            color, thickness = (0, 0, 255), 3
                             label = f"! {class_name} {conf:.2f}"
-                            publish_alert(class_name, conf) 
+                            publish_alert(class_name, conf)
                         else:
-                            color = (0, 255, 0)     # เขียว — ปกติ
-                            thickness = 2
+                            color, thickness = (0, 255, 0), 2
                             label = f"{class_name} {conf:.2f}"
 
                         cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), color, thickness)
-                        cv2.putText(frame, label, (int(x1), int(y1) - 10),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+                        cv2.putText(frame, label, (int(x1), int(y1) - 10),cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
                 else:
                     with ai_result_lock:
                         cached_boxes = []

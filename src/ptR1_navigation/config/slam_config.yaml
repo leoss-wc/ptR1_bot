@@ -1,37 +1,51 @@
-# --- Frames & Topics ---
-odom_frame: odom
-base_frame: base_link
-map_frame: map
-scan_topic: /scan
+slam_toolbox:
+  ros__parameters:
+    # --- Frames & Topics ---
+    odom_frame: odom
+    base_frame: base_link
+    map_frame: map
+    scan_topic: /scan
+    mode: mapping
 
-# --- Map Configuration ---
-map_update_interval: 1.0  # อัปเดตแผนที่ทุก 1 วินาที (ถ้าเร็วไป CPU จะทำงานหนัก)
-delta: 0.05               # ความละเอียด 5cm (มาตรฐาน)
+    # --- Map Resolution & Update ---
+    resolution: 0.02                    # ⬆️ เดิม 0.03 → ละเอียดสุด 2cm
+    map_update_interval: 0.3            # ⬆️ เดิม 0.5 → อัปเดตถี่มาก
+    max_laser_range: 12.0
 
-# --- Laser Parameters ---
-maxRange: 12.0            # ระยะไกลสุดที่ LiDAR ยิงถึง (ตามสเปค LiDAR คุณ)
-maxUrange: 10.0           # ระยะที่นำมาใช้สร้างแผนที่จริง (ควรน้อยกว่า maxRange)
-sigma: 0.05
-kernelSize: 1
-lstep: 0.05
-astep: 0.05
-iterations: 5
-lsigma: 0.075
-ogain: 3.0
-lskip: 0
+    # --- Motion Update ---
+    minimum_travel_distance: 0.03       # ⬆️ เดิม 0.05 → จับ drift จิ๋วมาก
+    minimum_travel_heading: 0.03        # ⬆️ เดิม 0.05 → ~1.7 องศา
+    minimum_time_interval: 0.05         # ⬆️ เดิม 0.1 → update ทุก 50ms
 
-# --- Motion Update (หุ่นขยับแค่ไหนถึงจะอัปเดตแผนที่) ---
-linearUpdate: 0.2         # เดิน 20cm อัปเดตที
-angularUpdate: 0.2        # หมุน ~11 องศา อัปเดตที (ชื่อมาตรฐานคือ angularUpdate)
-temporalUpdate: 3.0       # ถ้าหุ่นไม่ขยับเลย ให้บังคับอัปเดตทุก 3 วิ (กัน Map ค้าง)
-resampleThreshold: 0.5
+    # --- Scan Matching ---
+    scan_buffer_size: 60                # ⬆️ เดิม 40 → จำ scan ย้อนหลังมากสุด
+    scan_buffer_maximum_scan_distance: 12.0
+    use_scan_matching: true
+    use_scan_barycenter: true
+    link_match_minimum_response_fine: 0.5    # ⬆️ เข้มงวดขึ้น
+    link_scan_maximum_distance: 1.0          # ⬇️ เดิม 1.5 → match เฉพาะที่ใกล้มากๆ
 
-# --- Particle Filter (หัวใจหลักของความแม่นยำ) ---
-particles: 50           # จำนวนอนุภาคในฟิลเตอร์ → ยิ่งมากยิ่งแม่นยำแต่ใช้ CPU มากขึ้น          
+    # --- Odom Trust ---
+    distance_variance_penalty: 0.9
+    angle_variance_penalty: 0.05
 
-# --- Odometry Error (Mecanum ต้องจูนตรงนี้!) ---
-# ค่าความผิดพลาดของ Odom: Mecanum ลื่นกว่าล้อปกติ ให้ใส่ค่าเยอะหน่อย (0.2 - 0.3)
-srr: 0.05  # ความเพี้ยนเดินหน้า (Linear error  3-6% เผื่อไว้ 5% )
-srt: 0.02  # ความเพี้ยนตำแหน่งตอนหมุน (Odom นิ่ง ใส่ 2% )
-str: 0.02  # ความเพี้ยนมุมตอนเดินหน้า 
-stt: 0.02  # ความเพี้ยนมุมตอนหมุน (Angular error 1% ใส่ 2% บ)
+    # --- Loop Closure ---
+    do_loop_closing: true
+    loop_search_maximum_distance: 6.0        # ⬆️ เดิม 5.0
+    loop_match_minimum_response_coarse: 0.25 # ⬇️ เดิม 0.3 → หา candidate ได้ง่ายขึ้น
+    loop_match_maximum_variance_coarse: 3.0
+    loop_match_minimum_response_fine: 0.6    # ⬆️ เดิม 0.55 → ยืนยันแม่นมากขึ้น
+    loop_match_maximum_variance_fine: 0.1    # ⬇️ เดิม 0.15 → เข้มงวดสุด
+
+    # --- Solver ---
+    solver_plugin: solver_plugins::CeresSolver
+    ceres_linear_solver: ITERATIVE_SCHUR
+    ceres_preconditioner: SCHUR_JACOBI
+    ceres_trust_strategy: LEVENBERG_MARQUARDT
+    ceres_dogleg_type: TRADITIONAL_DOGLEG
+    ceres_loss_function: HuberLoss
+
+    throttle_scans: 1
+    transform_publish_period: 0.02
+    transform_timeout: 0.2
+    tf_buffer_duration: 30.0

@@ -133,7 +133,7 @@ class NavigationManager:
 
     def restore_pose(self):
         if self.current_map_name == "unknown":
-        rospy.logwarn("⚠️ restore_pose: map name still unknown, proceeding with caution.")   
+            rospy.logwarn("⚠️ restore_pose: map name still unknown, proceeding with caution.")   
         """อ่านไฟล์ JSON และ Publish ไปยัง /initialpose"""
         if not os.path.exists(POSE_FILE):
             rospy.logwarn("⚠️ No saved pose file found.")
@@ -193,6 +193,7 @@ class NavigationManager:
 
     def handle_stop_nav(self, req):
         rospy.loginfo("Stopping Navigation Stack...")
+        self.handle_stop_patrol(None)
 
         # บันทึกตำแหน่งล่าสุดก่อนปิด
         if req.save_pose:
@@ -365,6 +366,7 @@ class NavigationManager:
                 if self.should_loop:
                     rospy.loginfo("Looping patrol...")
                     self.current_goal_index = 0
+                    delay = 2.0 if len(self.goal_list) == 1 else 0.1
                     rospy.Timer(rospy.Duration(0.1), lambda e: self.send_next_goal(), oneshot=True)
                 else:
                     self.is_patrolling = False

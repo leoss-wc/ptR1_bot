@@ -188,13 +188,14 @@ include_directories(
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
  catkin_install_python(PROGRAMS
-   src/stream_manager_node.py
+   #src/stream_manager_node.py
    src/map_manager_node.py
    src/navigation_node.py
-   src/triggered_move_test.py
-   src/triggered_rotate_test.py
+   #src/triggered_move_test.py
+   #src/triggered_rotate_test.py
    src/pi_monitor_node.py
-   src/stream_manager_node2.py
+   src/stream_manager_node.py
+   #src/nav_test_node2.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 
