@@ -41,7 +41,7 @@ last_alert_time = {}  # ป้องกัน spam ต่อ class
 ai_result_lock = threading.Lock()
 cached_boxes = []
 frame_queue = queue.Queue(maxsize=1) 
-ai_running = False  
+ai_running = threading.Event()
 latest_frame = None
 frame_lock = threading.Lock()
 camera_stop_event = threading.Event()
@@ -190,31 +190,11 @@ def launch_ffmpeg_pipe():
     rtsp_url = rospy.get_param('~rtsp_url', 'rtsp://localhost:8554/mystream')
     bitrate = str(rospy.get_param('~bitrate', '600k'))
 
-    ffmpeg_command2 = [
-    'ffmpeg', '-y',
-    '-f', 'rawvideo', '-vcodec', 'rawvideo',
-    '-s', '640x480', '-pix_fmt', 'bgr24', '-r', '10',
-    '-i', '-',
-    '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency',
-    '-profile:v', 'baseline', '-pix_fmt', 'yuv420p',
-    '-g', '5',           # ✅ ลดจาก 15 → 5 (keyframe ถี่ขึ้น)
-    '-bf', '0',          # ✅ ไม่ใช้ B-frames
-    '-refs', '1',        # ✅ ลด reference frames
-    '-b:v', bitrate,
-    '-maxrate', bitrate, # ✅ จำกัด bitrate สูงสุด
-    '-bufsize', '500k',  # ✅ ลด encoder buffer
-    '-f', 'rtsp',
-    '-rtsp_transport', 'tcp',
-    '-muxdelay', '0',    # ✅ ลด mux delay
-    '-muxpreload', '0',  # ✅ ลด mux preload
-    rtsp_url
-]
     ffmpeg_command = [
     'ffmpeg', '-y',
     '-f', 'rawvideo', '-vcodec', 'rawvideo',
     '-s', '640x480', '-pix_fmt', 'bgr24', '-r', '10',
     '-i', '-',
-    '-vf', "drawtext=text='%{localtime\\:%H\\:%M\\:%S}':fontsize=30:fontcolor=white:box=1:boxcolor=black@0.5:x=10:y=10",
     '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency',
     '-profile:v', 'baseline', '-pix_fmt', 'yuv420p',
     '-g', '5',
@@ -367,7 +347,8 @@ def handle_stop_stream(req):
 
 def handle_toggle_ai(req):
     global detection_enabled
-    detection_enabled = not detection_enabled
+    with detection_lock:
+        detection_enabled = not detection_enabled
     msg = f"AI Detection: {'ON' if detection_enabled else 'OFF'}"
     rospy.loginfo(msg)
     return TriggerResponse(success=True, message=msg)
@@ -399,7 +380,7 @@ def ai_worker(frame):
         scores         = classes_scores[np.arange(len(predictions)), class_ids]
 
         # กรอง confidence ต่ำออก
-        mask        = scores > 0.35
+        mask        = scores > 0.45
         predictions = predictions[mask]
         scores      = scores[mask]
         class_ids   = class_ids[mask]
@@ -444,7 +425,7 @@ def ai_worker(frame):
     except Exception as e:
         rospy.logerr(f"AI Worker Error: {e}")
     finally:
-        ai_running = False  # ปลดล็อคเสมอ
+        ai_running.clear()  # ปลดล็อคเสมอ
 
 def cleanup():
     global is_stream_enabled, ffmpeg_process, mediamtx_process, cap, cached_boxes, ai_running, latest_frame
@@ -454,7 +435,7 @@ def cleanup():
     if cam_reader_thread_ref is not None and cam_reader_thread_ref.is_alive():
         cam_reader_thread_ref.join(timeout=3.0)
 
-    ai_running = False
+    ai_running.clear()
     cached_boxes = []
     latest_frame = None
 
@@ -501,14 +482,13 @@ def stream_manager_server():
                 if detection_enabled and model:
                     frame_counter += 1
                     ai_stats_counter += 1
-                    if frame_counter % 7 == 0 and not ai_running:
+                    if frame_counter % 7 == 0 and not ai_running.is_set():
                         frame_counter = 0
                         if is_frame_usable(frame) and has_motion(frame):
-                            ai_running = True
+                            ai_running.set()
                             t = threading.Thread(target=ai_worker, args=(frame.copy(),))
                             t.daemon = True
                             t.start()
-                        
                         if ai_stats_counter >= 10 and ai_stats_pub:  # ทุก 10 วิ (10Hz × 10 = 10วิ)
                             ai_stats_counter = 0
                             ai_stats_pub.publish(json.dumps({
@@ -558,6 +538,7 @@ def stream_manager_server():
                     frame_queue.get_nowait()  # ทิ้งเฟรมเก่าถ้ามี
                 except queue.Empty:
                     pass
+                
                 frame_queue.put_nowait(frame)  # ใส่เฟรมใหม่
 
             rate.sleep()

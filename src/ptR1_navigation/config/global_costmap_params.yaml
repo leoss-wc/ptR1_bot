@@ -3,8 +3,8 @@ global_costmap:
   global_frame: map             # กรอบอ้างอิงหลักของ global costmap มักใช้ "map" เมื่อใช้ AMCL
   robot_base_frame: base_link   # กรอบฐานของหุ่นยนต์ เช่น "base_link" หรือ "base_footprint"
 
-  update_frequency: 1.0         # ความถี่ในการอัปเดตข้อมูล costmap (Hz) ยิ่งสูงยิ่ง responsive แต่กิน CPU มากขึ้น
-  publish_frequency: 0.5        # ความถี่ในการเผยแพร่ costmap เพื่อ visualization ใน RViz
+  update_frequency: 0.5         # ความถี่ในการอัปเดตข้อมูล costmap (Hz) ยิ่งสูงยิ่ง responsive แต่กิน CPU มากขึ้น
+  publish_frequency: 0.2        # ความถี่ในการเผยแพร่ costmap เพื่อ visualization ใน RViz
 
   transform_tolerance: 0.5      # เวลา buffer ที่จะรอ TF ให้พร้อมก่อนทิ้ง frame (วินาที)
 
@@ -29,5 +29,5 @@ global_costmap:
 
   inflation_layer:
     enabled: true                     # เปิดใช้งาน inflation layer (พื้นที่กันชน)
-    inflation_radius: 0.55             # ระยะจากสิ่งกีดขวางที่จะใส่ค่า cost เพิ่ม (เมตร)
-    cost_scaling_factor: 2.5          # ความชันของค่า cost รอบ obstacle → ค่ายิ่งสูง หุ่นยนต์ยิ่งหลีกเลี่ยง
+    inflation_radius: 0.4             # ระยะจากสิ่งกีดขวางที่จะใส่ค่า cost เพิ่ม (เมตร)
+    cost_scaling_factor: 3.5          # ความชันของค่า cost รอบ obstacle → ค่ายิ่งสูง หุ่นยนต์ยิ่งหลีกเลี่ยง

@@ -10,7 +10,7 @@ base_local_planner: "teb_local_planner/TebLocalPlannerROS"
 # planner_frequency: ความถี่ที่ Global Planner จะพยายามวางแผนเส้นทางใหม่ (Hz)
 # ค่า 1.0 หมายถึงจะพยายามวางแผนใหม่ทุกๆ 1 วินาที หากจำเป็น
 # ถ้าตั้งเป็น 0.0 จะวางแผนแค่ครั้งเดียวตอนได้รับ Goal ใหม่เท่านั้น
-planner_frequency: 0.5
+planner_frequency: 1.0
 planner_patience: 5.0 # รอได้ 5 วิถ้า global plan หาทางไม่ได้ ก่อนจะไป Recovery
 
 # controller_frequency: ความถี่ที่ Local Planner จะคำนวณและส่งคำสั่งความเร็ว (Hz)
@@ -20,7 +20,7 @@ controller_patience: 15.0    # รอได้ 15 วิถ้า local plan ต
 # === Oscillation Detection ===
 # พารามิเตอร์สำหรับตรวจจับว่าหุ่นยนต์กำลังเคลื่อนที่กลับไปกลับมา ณ จุดเดิมหรือไม่
 oscillation_timeout: 10.0   # ระยะเวลา (วินาที) ที่จะสรุปว่าหุ่นยนต์กำลัง oscillate
-oscillation_distance: 0.2 # ระยะทาง (เมตร) ที่จะถือว่าเป็นการเคลื่อนที่ในบริเวณเดิมๆ
+oscillation_distance: 0.3 # ระยะทาง (เมตร) ที่จะถือว่าเป็นการเคลื่อนที่ในบริเวณเดิมๆ
 
 # === Recovery Behaviors ===
 # recovery_behavior_enabled: เปิด/ปิด การใช้งานระบบกู้คืนตัวเองเมื่อหุ่นยนต์ติดขัด
@@ -36,18 +36,20 @@ recovery_behaviors:
 
 # ตั้งค่าสำหรับพฤติกรรม conservative_reset (จะทำงานก่อน)
 conservative_reset:
-  reset_distance: 3.0 # เคลียร์ costmap ในรัศมี 3 เมตร รอบหุ่นยนต์
+  reset_distance: 4.0 # เคลียร์ costmap ในรัศมี 4 เมตร รอบหุ่นยนต์
 
 # ตั้งค่าสำหรับพฤติกรรม aggressive_reset (ถ้า conservative ยังไม่สำเร็จ)
 aggressive_reset:
-  reset_distance: 0.5 # เคลียร์ costmap เคลียร์ให้เหี้ยนเหลือแค่รอบตัว 0.5m
+  reset_distance: 1.5  # ให้พอกับ inflation_radius ของหุ่น
 
 rotate_recovery:
   frequency: 20.0
   sim_granularity: 0.017
+
   
 # === Other Parameters ===
 # shutdown_costmaps: หากเป็น true, costmap จะหยุดทำงานเมื่อไม่มี goal เพื่อประหยัด CPU
 # แต่การตั้งเป็น false จะทำให้หุ่นยนต์ตอบสนองต่อ goal ใหม่ได้ทันทีโดยไม่มี delay
 shutdown_costmaps: false
+allow_unknown: true
 max_planning_retries: 5  # ลองวางแผนแค่ 5 ครั้งพอ ถ้าไม่ได้ให้ฟ้อง Error เลย (ค่า Default คือ -1 ลองตลอดกาล)
