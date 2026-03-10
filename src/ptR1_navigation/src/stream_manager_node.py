@@ -37,8 +37,8 @@ COCO_CLASSES = {
 }
 
 DOOR_CLASSES = {
-    0: 'door_open',
-    1: 'door_close'
+    0: 'door_close',
+    1: 'door_open'
 }
 
 alert_pub = None
@@ -731,7 +731,7 @@ def stream_manager_server():
                 else:
                     with ai_result_lock:
                         cached_boxes = []
-                if model2:
+                if model2 and detection_enabled:
                     door_frame_counter += 1
                     if door_frame_counter %  30 == 0 and not ai_running2.is_set():
                         door_frame_counter = 0

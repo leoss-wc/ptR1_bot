@@ -1,7 +1,0 @@
-image: /home/patrolR1/ptR1_ws/src/ptR1_navigation/maps/a8.pgm
-resolution: 0.050000
-origin: [-71.317597, -61.335945, 0.000000]
-negate: 0
-occupied_thresh: 0.65
-free_thresh: 0.196
-

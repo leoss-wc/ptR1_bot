@@ -1,4 +1,4 @@
-image: /home/patrolR1/ptR1_ws/src/ptR1_navigation/maps/a2.pgm
+image: /home/patrolR1/ptR1_ws/src/ptR1_navigation/maps/EEfloor_6.pgm
 resolution: 0.050000
 origin: [-78.049822, -36.784280, 0.000000]
 negate: 0

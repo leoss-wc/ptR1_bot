@@ -22,11 +22,11 @@ TebLocalPlannerROS:
   yaw_goal_tolerance: 0.25 # มุมที่ยอมรับได้เมื่อถึงเป้า (เรเดียน)
   free_goal_vel: false # ยอมให้หุ่นพุ่งผ่านจุดเป้าหมายหรือไม่?
   # --- 5. Obstacle Avoidance---
-  min_obstacle_dist: 0.2  # ระยะห่างต่ำสุดจากสิ่งกีดขวาง (เมตร)
+  min_obstacle_dist: 0.15  # ระยะห่างต่ำสุดจากสิ่งกีดขวาง (เมตร)
   include_costmap_obstacles: true # ใช้ข้อมูลจาก costmap หรือไม่
   costmap_obstacles_behind_robot_dist: 1.0 # ระยะหลังหุ่นที่ยังสนใจสิ่งกีดขวางด้านหลัง (เมตร)
   obstacle_proximity_ratio_max_vel: 0.5
-  inflation_dist: 0.45     # ระยะที่เริ่มชะลอความเร็ว     
+  inflation_dist: 0.10     # ระยะที่เริ่มชะลอความเร็ว     
   # --- 6. Optimization Weights ---
   weight_kinematics_nh: 1      #  1 (เพื่อให้สไลด์ข้างได้)
   weight_kinematics_forward_drive: 10

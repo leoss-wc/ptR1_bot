@@ -1,0 +1,13 @@
+<launch> 
+    <!-- Start ROSBridge WebSocket -->
+    <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch"/>
+
+    <!-- Static transform publishers for sensor frames 
+    <node pkg="tf2_ros" type="static_transform_publisher" name="mag_tf"
+        args="0.03 0.02 0.24 0 0 0 base_link mag_link " />
+        -->
+
+    <node name="navigation_node" pkg="ptR1_navigation" type="navigation_node.py" output="screen" />
+    <node name="stream_manager_node" pkg="ptR1_navigation" type="stream_manager_node.py" output="screen" />
+    <node name="pi_monitor_node" pkg="ptR1_navigation" type="pi_monitor_node.py" output="screen" />S
+</launch>
