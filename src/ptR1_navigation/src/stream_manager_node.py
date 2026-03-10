@@ -292,11 +292,12 @@ def launch_ffmpeg_pipe():
     """ตั้งค่า FFmpeg ให้รอรับภาพจากท่อ (stdin) ของ Python"""
     rtsp_url = rospy.get_param('~rtsp_url', 'rtsp://localhost:8554/mystream')
     bitrate = str(rospy.get_param('~bitrate', '600k'))
+    fps      = rospy.get_param('~camera_fps', 12)
 
     ffmpeg_command = [
     'ffmpeg', '-y',
     '-f', 'rawvideo', '-vcodec', 'rawvideo',
-    '-s', '640x480', '-pix_fmt', 'bgr24', '-r', '10',
+    '-s', '640x480', '-pix_fmt', 'bgr24', '-r', str(fps),
     '-i', '-',
     '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency',
     '-profile:v', 'baseline', '-pix_fmt', 'yuv420p',
@@ -402,6 +403,7 @@ def handle_start_stream(req):
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
     cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
     cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSEC, 500)
+    cap.set(cv2.CAP_PROP_FPS, 12)
 
     if not cap.isOpened():
         return TriggerResponse(success=False, message="Camera failed")
@@ -644,6 +646,15 @@ def cleanup():
 def stream_manager_server():
     global is_stream_enabled, cap, ffmpeg_process, cached_boxes, ai_running, latest_frame
 
+    camera_fps          = rospy.get_param('~camera_fps', 12)
+    person_interval_sec = rospy.get_param('~person_interval_sec', 2.5)
+    door_interval_sec   = rospy.get_param('~door_interval_sec', 6.0)
+
+    PERSON_SKIP = int(camera_fps * person_interval_sec)  # 30
+    DOOR_SKIP   = int(camera_fps * door_interval_sec)    # 72
+
+    rospy.loginfo(f"PERSON_SKIP={PERSON_SKIP}, DOOR_SKIP={DOOR_SKIP}")
+
     rospy.init_node('stream_manager_server')
     init_alert_publisher()
     rospy.on_shutdown(cleanup)
@@ -660,7 +671,7 @@ def stream_manager_server():
     writer.daemon = True
     writer.start()
 
-    rate = rospy.Rate(10)
+    rate = rospy.Rate(camera_fps)
     frame_counter = 0
     ai_stats_counter = 0
     door_frame_counter = 0  # นับเฟรมสำหรับโมเดล 2 (skip ทุก 10 เฟรม)
@@ -676,11 +687,11 @@ def stream_manager_server():
                         rate.sleep()
                         continue
                     frame = latest_frame.copy()
-                # โมเดล 1: COCO (person, ฯลฯ) — รันทุก 10 เฟรม
+                # โมเดล 1: COCO (person)
                 if detection_enabled and model:
                     frame_counter += 1
                     ai_stats_counter += 1
-                    if frame_counter % 10 == 0 and not ai_running.is_set():
+                    if frame_counter % PERSON_SKIP == 0 and not ai_running.is_set():
                         frame_counter = 0
                         if is_frame_usable(frame) and has_motion(frame):
                             ai_running.set()
@@ -731,9 +742,10 @@ def stream_manager_server():
                 else:
                     with ai_result_lock:
                         cached_boxes = []
+                # โมเดล 2: Door Detection 
                 if model2 and detection_enabled:
                     door_frame_counter += 1
-                    if door_frame_counter %  30 == 0 and not ai_running2.is_set():
+                    if door_frame_counter % DOOR_SKIP == 0 and not ai_running2.is_set():
                         door_frame_counter = 0
                         if is_frame_usable(frame):
                             ai_running2.set()
