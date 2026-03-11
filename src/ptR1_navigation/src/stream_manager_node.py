@@ -688,7 +688,7 @@ def stream_manager_server():
                         continue
                     frame = latest_frame.copy()
                 # โมเดล 1: COCO (person)
-                if detection_enabled and model:
+                if detection_enabled and model and has_motion(frame) and is_frame_usable(frame):
                     frame_counter += 1
                     ai_stats_counter += 1
                     if frame_counter % PERSON_SKIP == 0 and not ai_running.is_set():
@@ -743,7 +743,7 @@ def stream_manager_server():
                     with ai_result_lock:
                         cached_boxes = []
                 # โมเดล 2: Door Detection 
-                if model2 and detection_enabled:
+                if model2 and detection_enabled and is_frame_usable(frame) and has_motion(frame):
                     door_frame_counter += 1
                     if door_frame_counter % DOOR_SKIP == 0 and not ai_running2.is_set():
                         door_frame_counter = 0

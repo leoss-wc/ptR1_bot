@@ -14,7 +14,7 @@ planner_frequency: 1.0
 planner_patience: 5.0 # รอได้ 5 วิถ้า global plan หาทางไม่ได้ ก่อนจะไป Recovery
 
 # controller_frequency: ความถี่ที่ Local Planner จะคำนวณและส่งคำสั่งความเร็ว (Hz)
-controller_frequency: 8.0
+controller_frequency: 6.0
 controller_patience: 15.0    # รอได้ 15 วิถ้า local plan ติดขัด ก่อนจะไป Recovery
 
 # === Oscillation Detection ===
