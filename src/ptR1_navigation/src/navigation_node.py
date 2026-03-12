@@ -10,6 +10,7 @@ from geometry_msgs.msg import PoseWithCovarianceStamped
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 import math
 import copy
+import tf
 from ptR1_navigation.srv import (StartAMCL, StartAMCLResponse, StopAMCL, StopAMCLResponse,
                                  StartPatrol, StartPatrolResponse, PausePatrol, PausePatrolResponse,
                                  ResumePatrol, ResumePatrolResponse, StopPatrol, StopPatrolResponse,
@@ -70,6 +71,8 @@ class NavigationManager:
         rospy.loginfo("Navigation Services Ready.")
     
     def cmd_callback(self, msg):
+        should_cancel = False
+        should_resume = False
         with self._lock:
             if not self.is_patrolling:
                 return
@@ -142,20 +145,22 @@ class NavigationManager:
 
     def restore_pose(self):
         """อ่านไฟล์ JSON และ Publish ไปยัง /initialpose"""
-        if self.current_map_name == "unknown" or saved_map == "unknown":
-            rospy.logwarn("⚠️ ❌ Cannot verify map match (unknown). Aborting restore.")
         if not os.path.exists(POSE_FILE):
             rospy.logwarn("⚠️ No saved pose file found.")
             return False
-            
         try:
             with open(POSE_FILE, 'r') as f:
                 data = json.load(f)
-
+    
             saved_map = data.get("map_name", "unknown")
+
+
             if self.current_map_name != "unknown" and saved_map != self.current_map_name:
                 rospy.logerr(f"Nav node: Map Mismatch Current: {self.current_map_name}, Saved: {saved_map}")
                 rospy.logerr("Nav node: Aborting restore_pose to prevent localization errors.")
+                return False
+            if saved_map != self.current_map_name:
+                rospy.logerr(f"Map Mismatch: current={self.current_map_name}, saved={saved_map}")
                 return False
                 
             msg = PoseWithCovarianceStamped()
@@ -168,12 +173,16 @@ class NavigationManager:
             msg.pose.pose.orientation.y = data["orientation"]["y"]
             msg.pose.pose.orientation.z = data["orientation"]["z"]
             msg.pose.pose.orientation.w = data["orientation"]["w"]
-            msg.pose.covariance = data["covariance"]
+            msg.pose.covariance = [0.1, 0.0, 0.0, 0.0, 0.0, 0.0,
+                           0.0, 0.1, 0.0, 0.0, 0.0, 0.0,
+                           0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                           0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                           0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                           0.0, 0.0, 0.0, 0.0, 0.0, 0.001] 
         
-            for _ in range(3):
+            for _ in range(10):
                 self.initial_pose_pub.publish(msg)
-                rospy.sleep(0.2)
-                
+                rospy.sleep(0.3)
             rospy.loginfo("📍 Restored initial pose from file.")
             return True
         except Exception as e:
@@ -191,21 +200,39 @@ class NavigationManager:
         
         if req.restore_pose:
             # รอระบบขึ้นสักครู่แล้วค่อย Restore Pose
-            threading.Thread(target=self._wait_and_restore, daemon=True)
+            threading.Thread(target=self._wait_and_restore, daemon=True).start()
 
         return StartAMCLResponse(True, "Navigation System Started.")
 
     def _wait_and_restore(self):
-        """รอจนกว่า AMCL จะพร้อมรับ initialpose จริงๆ"""
-        rospy.loginfo("Waiting for AMCL to be ready...")
-        
-        # รอ /amcl topic มีคนส่งมาก่อน (แปลว่า AMCL ขึ้นแล้ว)
+        rospy.loginfo("⏳ Waiting for AMCL and TF to be ready...")
         try:
+            # 1. รอ AMCL publish pose ก่อน
             rospy.wait_for_message('/amcl_pose', PoseWithCovarianceStamped, timeout=30.0)
-            rospy.sleep(1.0)  # buffer เล็กน้อยหลัง AMCL ขึ้น
+            
+            # 2. รอ TF tree พร้อม (map → odom)
+            tf_listener = tf.TransformListener()
+            timeout = rospy.Time.now() + rospy.Duration(15.0)
+            while not rospy.is_shutdown():
+                try:
+                    tf_listener.waitForTransform(
+                        "map", "odom",
+                        rospy.Time(0),
+                        rospy.Duration(1.0)
+                    )
+                    rospy.loginfo("✅ TF ready.")
+                    break
+                except tf.Exception:
+                    if rospy.Time.now() > timeout:
+                        rospy.logwarn("⚠️ TF timeout. Proceeding anyway...")
+                        break
+                    rospy.sleep(0.5)
+            
+            rospy.sleep(0.2)
             self.restore_pose()
+
         except rospy.ROSException:
-            rospy.logwarn("⚠️ Timed out waiting for AMCL. Restore pose skipped.")
+            rospy.logwarn("⚠️ Timed out waiting for AMCL. Restore skipped.")
 
     def handle_stop_nav(self, req):
         """หยุด Navigation Stack"""
@@ -238,9 +265,21 @@ class NavigationManager:
             return StartPatrolResponse(False, "Goal list cannot be empty.")
         
         self.handle_stop_patrol(None)
+        goal_list = list(req.goals)
+
+        if len(goal_list) == 1 and req.loop:
+            if self.latest_pose is None:
+                return StartPatrolResponse(False, "No current pose available.")
+
+        from geometry_msgs.msg import PoseStamped
+        start_pose = PoseStamped()
+        start_pose.header.frame_id = self.latest_pose.header.frame_id
+        start_pose.pose = self.latest_pose.pose.pose  # ตำแหน่งปัจจุบัน
+        goal_list.insert(0, start_pose)  # แทรกเป็น goal แรก
+        rospy.loginfo("1-goal loop: inserted current position as start point.")
 
         with self._lock:
-            self.goal_list = req.goals
+            self.goal_list = goal_list
             self.should_loop = req.loop
             self.current_goal_index = 0
             self.is_patrolling = True
@@ -267,6 +306,7 @@ class NavigationManager:
 
     def handle_resume_patrol(self, req):
         """Resume Patrol ที่หยุดอยู่"""
+        # [FIX #1] ใช้ Lock
         with self._lock:
             if not self.is_patrolling:
                 return ResumePatrolResponse(False, "Not currently patrolling.")
@@ -522,7 +562,7 @@ class NavigationManager:
                                0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 
                                0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 
                                0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 
-                               0.0, 0.0, 0.0, 0.0, 0.0, 0.068]
+                               0.0, 0.0, 0.0, 0.0, 0.0, 0.001]
 
         self.initial_pose_pub.publish(msg)
         rospy.sleep(0.1)
