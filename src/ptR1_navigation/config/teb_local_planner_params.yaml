@@ -5,7 +5,7 @@ TebLocalPlannerROS:
   teb_autosize: true  # อนุญาตให้ปรับจำนวนจุดในเส้นทางอัตโนมัติ
   dt_ref: 0.125   #คือช่วงเวลาระหว่างแต่ละจุดบน trajectory ที่ TEB สร้างขึ้น 
   dt_hysteresis: 0.06 #คือ tolerance ของ dt_ref — TEB จะไม่ปรับจำนวนจุดใหม่ถ้า dt อยู่ในช่วงนี้
-  max_samples: 150
+  max_samples: 80
   # --- 2. Robot Limits ---
   max_vel_x: 0.35 # ความเร็วเดินหน้าสูงสุด (m/s)
   max_vel_x_backwards: 0.2 # ความเร็วถอยหลังสูงสุด (m/s) // ถอยหลังช้าๆ เพื่อความปลอดภัย
@@ -26,12 +26,12 @@ TebLocalPlannerROS:
   include_costmap_obstacles: true # ใช้ข้อมูลจาก costmap หรือไม่
   costmap_obstacles_behind_robot_dist: 1.0 # ระยะหลังหุ่นที่ยังสนใจสิ่งกีดขวางด้านหลัง (เมตร)
   obstacle_proximity_ratio_max_vel: 0.5
-  inflation_dist: 0.10     # ระยะที่เริ่มชะลอความเร็ว     
+  inflation_dist: 0.2     # ระยะที่เริ่มชะลอความเร็ว     
   # --- 6. Optimization Weights ---
   weight_kinematics_nh: 1      #  1 (เพื่อให้สไลด์ข้างได้)
   weight_kinematics_forward_drive: 10
   weight_optimaltime: 0.5 # น้ำหนัก "ความเร็ว" (Time Optimality)
-  weight_obstacle: 50  # น้ำหนัก "กลัวชน"
+  weight_obstacle: 40  # น้ำหนัก "กลัวชน"
   weight_viapoint: 5.0 # น้ำหนัก "ผ่านจุดกำหนด"
   # --- 7. Footprint ---
   footprint_model:

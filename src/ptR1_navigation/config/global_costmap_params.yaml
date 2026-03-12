@@ -2,8 +2,8 @@
 global_costmap:
   global_frame: map             # กรอบอ้างอิงหลักของ global costmap มักใช้ "map" เมื่อใช้ AMCL
   robot_base_frame: base_link   # กรอบฐานของหุ่นยนต์
-  update_frequency: 1.0         # ความถี่ในการอัปเดตข้อมูล costmap (Hz)
-  publish_frequency: 0.2        # ความถี่ในการเผยแพร่ costmap เพื่อ visualization ใน RViz
+  update_frequency: 0.5         # ความถี่ในการอัปเดตข้อมูล costmap (Hz)
+  publish_frequency: 0.0        # ความถี่ในการเผยแพร่ costmap เพื่อ visualization ใน RViz
   transform_tolerance: 0.5      # เวลา buffer ที่จะรอ TF ให้พร้อมก่อนทิ้ง frame (วินาที)
   rolling_window: false         # global costmap ไม่ต้องใช้ rolling window
   resolution: 0.05              # ความละเอียดของ grid (เมตร/เซลล์)
@@ -29,7 +29,7 @@ global_costmap:
       max_obstacle_height: 0.5
       min_obstacle_height: 0.0
       obstacle_range: 8.0
-      raytrace_range: 10.0
+      raytrace_range: 8.0
 
   inflation_layer:
     enabled: true

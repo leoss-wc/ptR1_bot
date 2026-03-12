@@ -3,7 +3,7 @@ local_costmap:
   global_frame: odom             # กรอบอ้างอิงหลักของ local costmap → ใช้ "odom" สำหรับการคำนวณระยะทางระยะสั้นและการเคลื่อนไหว
   robot_base_frame: base_link    # กรอบของหุ่นยนต์ที่ใช้เป็นอ้างอิง (เช่น base_link หรือ base_footprint)
 
-  update_frequency: 5.0         # ความถี่ในการอัปเดตข้อมูล costmap (Hz) → ยิ่งสูง หุ่นยนต์ตอบสนองเร็วขึ้น แต่กิน CPU มากขึ้น
+  update_frequency: 3.0         # ความถี่ในการอัปเดตข้อมูล costmap (Hz) → ยิ่งสูง หุ่นยนต์ตอบสนองเร็วขึ้น แต่กิน CPU มากขึ้น
   publish_frequency: 0.3         # ความถี่ในการเผยแพร่ข้อมูล costmap สำหรับ visualization ใน RViz
 
   static_map: false
@@ -19,5 +19,5 @@ local_costmap:
 
   inflation_layer:
     enabled: true
-    inflation_radius: 0.4      #เพื่อให้มุดช่องแคบ/ประตูได้
+    inflation_radius: 0.25     #เพื่อให้มุดช่องแคบ/ประตูได้
     cost_scaling_factor: 5.0    # กราฟ Cost ชันหน่อย เพื่อให้พยายามอยู่กลางๆ ช่อง
