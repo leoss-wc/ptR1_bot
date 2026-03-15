@@ -33,7 +33,7 @@ obstacle_layer:
 inflation_layer:
   enabled: true                     # เปิดใช้งาน inflation
   inflation_radius: 0.2            # รัศมีจาก obstacle ที่จะขยาย cost ออก (เมตร)
-  cost_scaling_factor: 5.0        # ความชันของค่า cost → ค่าสูง = หลบมาก, ค่าต่ำ = ผ่านใกล้ obstacle ได้ง่ายขึ้น
+  cost_scaling_factor: 4.0        # ความชันของค่า cost → ค่าสูง = หลบมาก, ค่าต่ำ = ผ่านใกล้ obstacle ได้ง่ายขึ้น
 
 
 # (ปิดไว้)
