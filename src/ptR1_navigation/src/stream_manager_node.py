@@ -395,7 +395,7 @@ def handle_start_stream(req):
 
     if model2 is None:
         rospy.loginfo("Loading Door Detection Model (ONNX Runtime) — Model 2 (door_open/door_close)...")
-        model2_path = '/home/patrolR1/ptR1_ws/src/ptR1_navigation/model/door_detector_best.onnx'
+        model2_path = '/home/patrolR1/ptR1_ws/src/ptR1_navigation/model/best.onnx'
         sess_options2 = ort.SessionOptions()
         sess_options2.intra_op_num_threads = 1
         sess_options2.inter_op_num_threads = 1
@@ -614,8 +614,8 @@ def stream_manager_server():
     person_interval_sec = rospy.get_param('~person_interval_sec', 2.5)
     door_interval_sec   = rospy.get_param('~door_interval_sec', 6.0)
 
-    PERSON_SKIP = int(camera_fps * person_interval_sec)  # เช่น 30
-    DOOR_SKIP   = int(camera_fps * door_interval_sec)    # เช่น 72
+    PERSON_SKIP = int(camera_fps * person_interval_sec)
+    DOOR_SKIP   = int(camera_fps * door_interval_sec)
 
     rospy.loginfo(f"PERSON_SKIP={PERSON_SKIP}, DOOR_SKIP={DOOR_SKIP}")
 
@@ -656,7 +656,6 @@ def stream_manager_server():
                     frame = latest_frame.copy()
 
                 frame_usable = is_frame_usable(frame)
-                frame_moving = has_motion(frame)  # [FIX #3] เรียกครั้งเดียวเก็บผลไว้ใช้
 
                 # snapshot detection settings ครั้งเดียวต่อเฟรม
                 with detection_lock:
@@ -673,15 +672,10 @@ def stream_manager_server():
                         should_alert = True
                     elif _mode == 'time':
                         should_alert = is_night_time(_start, _end)
-
-                # ==========================================
                 # โมเดล 1: COCO (person detection)
-                # ==========================================
-                if _enabled and model and frame_moving and frame_usable:
+                if _enabled and model  and frame_usable:
                     frame_counter    += 1
                     ai_stats_counter += 1
-
-                    # [FIX #2] ย้าย ai_stats ออกนอก PERSON_SKIP block
                     if ai_stats_counter >= AI_STATS_THRESHOLD and ai_stats_pub:
                         ai_stats_counter = 0
                         ai_stats_pub.publish(json.dumps({
@@ -690,8 +684,6 @@ def stream_manager_server():
                             'detection_enabled': _enabled,
                             'mode':              _mode
                         }))
-
-                    # [FIX #3] ไม่เช็ค is_frame_usable/has_motion ซ้ำ
                     if frame_counter % PERSON_SKIP == 0 and not ai_running.is_set():
                         frame_counter = 0
                         ai_running.set()
@@ -722,14 +714,9 @@ def stream_manager_server():
                 else:
                     with ai_result_lock:
                         cached_boxes = []
-
-                # ==========================================
                 # โมเดล 2: Door Detection
-                # ==========================================
-                if model2 and _enabled and frame_usable and frame_moving:
+                if model2 and _enabled and frame_usable :
                     door_frame_counter += 1
-
-                    # [FIX #3] ไม่เช็ค is_frame_usable ซ้ำ
                     if door_frame_counter % DOOR_SKIP == 0 and not ai_running2.is_set():
                         door_frame_counter = 0
                         ai_running2.set()
@@ -744,21 +731,24 @@ def stream_manager_server():
                         x1, y1, x2, y2, conf, cls = box
                         door_class = DOOR_CLASSES.get(int(cls), f"door_{int(cls)}")
 
-                        # [FIX #1] เช็ค should_alert เหมือน โมเดล 1
-                        if should_alert:
-                            color     = (0, 0, 255)
+                        if 'door' not in _classes:
+                            continue
+
+                        if door_class == 'door_open' and _enabled:
+                            color     = (0, 0, 255)   # แดง
                             thickness = 3
                             label     = f"! [M2] {door_class} {conf:.2f}"
-                            publish_alert(door_class, conf)
-                        else:
-                            # door_open → สีส้ม, door_close → สีฟ้า
-                            color     = (255, 165, 0) if door_class == 'door_open' else (0, 165, 255)
+                            if should_alert:
+                                publish_alert(door_class, conf)
+                        else:  # door_close หรือ _enabled=False → เขียวเสมอ
+                            color     = (0, 255, 0)
                             thickness = 2
                             label     = f"[M2] {door_class} {conf:.2f}"
 
                         cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), color, thickness)
                         cv2.putText(frame, label, (int(x1), int(y1) - 10),
                                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+
 
                 # ส่งเฟรมไป ffmpeg_writer_thread
                 try:

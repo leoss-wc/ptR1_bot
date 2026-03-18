@@ -84,7 +84,6 @@ class NavigationManager:
                 self.is_paused = False
                 should_resume = True
 
-        # เรียก ROS calls นอก lock เสมอ
         if should_cancel:
             self.move_base_client.cancel_goal()
             self.update_status("paused")
@@ -199,7 +198,6 @@ class NavigationManager:
         self.nav_process = subprocess.Popen(cmd)
         
         if req.restore_pose:
-            # รอระบบขึ้นสักครู่แล้วค่อย Restore Pose
             threading.Thread(target=self._wait_and_restore, daemon=True).start()
 
         return StartAMCLResponse(True, "Navigation System Started.")
@@ -207,10 +205,7 @@ class NavigationManager:
     def _wait_and_restore(self):
         rospy.loginfo("⏳ Waiting for AMCL and TF to be ready...")
         try:
-            # 1. รอ AMCL publish pose ก่อน
             rospy.wait_for_message('/amcl_pose', PoseWithCovarianceStamped, timeout=30.0)
-            
-            # 2. รอ TF tree พร้อม (map → odom)
             tf_listener = tf.TransformListener()
             timeout = rospy.Time.now() + rospy.Duration(15.0)
             while not rospy.is_shutdown():
@@ -274,8 +269,8 @@ class NavigationManager:
         from geometry_msgs.msg import PoseStamped
         start_pose = PoseStamped()
         start_pose.header.frame_id = self.latest_pose.header.frame_id
-        start_pose.pose = self.latest_pose.pose.pose  # ตำแหน่งปัจจุบัน
-        goal_list.insert(0, start_pose)  # แทรกเป็น goal แรก
+        start_pose.pose = self.latest_pose.pose.pose  
+        goal_list.insert(0, start_pose) 
         rospy.loginfo("1-goal loop: inserted current position as start point.")
 
         with self._lock:
@@ -306,7 +301,6 @@ class NavigationManager:
 
     def handle_resume_patrol(self, req):
         """Resume Patrol ที่หยุดอยู่"""
-        # [FIX #1] ใช้ Lock
         with self._lock:
             if not self.is_patrolling:
                 return ResumePatrolResponse(False, "Not currently patrolling.")
@@ -351,14 +345,11 @@ class NavigationManager:
                 self.is_patrolling = False
                 self.update_status("idle")
                 return
-            # snapshot ค่าที่ต้องใช้ก่อนออกจาก Lock
             current_index = self.current_goal_index
             goal_list_snapshot = self.goal_list
             should_loop = self.should_loop
 
         target_pose_msg = copy.deepcopy(goal_list_snapshot[current_index])
-
-        # --- LOOK-AHEAD HEADING LOGIC ---
         next_index = current_index + 1
         has_next_goal = False
         
