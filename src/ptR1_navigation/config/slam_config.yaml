@@ -8,22 +8,22 @@ slam_toolbox:
     mode: mapping
 
     # --- Map Resolution & Update ---
-    resolution: 0.02                    # ⬆️ เดิม 0.03 → ละเอียดสุด 2cm
-    map_update_interval: 1.0          # ⬆️ เดิม 0.5 → อัปเดตแผนที่ทุก 1 วินาที
+    resolution: 0.02                   
+    map_update_interval: 1.0          
     max_laser_range: 12.0
 
     # --- Motion Update ---
-    minimum_travel_distance: 0.03       # ⬆️ เดิม 0.05 → จับ drift จิ๋วมาก
-    minimum_travel_heading: 0.03        # ⬆️ เดิม 0.05 → ~1.7 องศา
-    minimum_time_interval: 0.05         # ⬆️ เดิม 0.1 → update ทุก 50ms
+    minimum_travel_distance: 0.03      
+    minimum_travel_heading: 0.03        
+    minimum_time_interval: 0.05         
 
     # --- Scan Matching ---
-    scan_buffer_size: 60                # ⬆️ เดิม 40 → จำ scan ย้อนหลังมากสุด
+    scan_buffer_size: 60              
     scan_buffer_maximum_scan_distance: 12.0
     use_scan_matching: true
     use_scan_barycenter: true
-    link_match_minimum_response_fine: 0.5    # ⬆️ เข้มงวดขึ้น
-    link_scan_maximum_distance: 1.0          # ⬇️ เดิม 1.5 → match เฉพาะที่ใกล้มากๆ
+    link_match_minimum_response_fine: 0.5   
+    link_scan_maximum_distance: 1.0         
 
     # --- Odom Trust ---
     distance_variance_penalty: 0.9
@@ -31,11 +31,11 @@ slam_toolbox:
 
     # --- Loop Closure ---
     do_loop_closing: true
-    loop_search_maximum_distance: 6.0        # ⬆️ เดิม 5.0
-    loop_match_minimum_response_coarse: 0.25 # ⬇️ เดิม 0.3 → หา candidate ได้ง่ายขึ้น
+    loop_search_maximum_distance: 6.0        
+    loop_match_minimum_response_coarse: 0.25 
     loop_match_maximum_variance_coarse: 3.0
-    loop_match_minimum_response_fine: 0.6    # ⬆️ เดิม 0.55 → ยืนยันแม่นมากขึ้น
-    loop_match_maximum_variance_fine: 0.1    # ⬇️ เดิม 0.15 → เข้มงวดสุด
+    loop_match_minimum_response_fine: 0.6    
+    loop_match_maximum_variance_fine: 0.1   
 
     # --- Solver ---
     solver_plugin: solver_plugins::CeresSolver
