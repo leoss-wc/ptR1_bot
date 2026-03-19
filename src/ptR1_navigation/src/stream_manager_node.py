@@ -536,7 +536,7 @@ def ai_worker2(frame):
         class_ids      = np.argmax(classes_scores, axis=1)
         scores         = classes_scores[np.arange(len(predictions)), class_ids]
 
-        mask        = scores > 0.45
+        mask        = scores > 0.30
         predictions = predictions[mask]
         scores      = scores[mask]
         class_ids   = class_ids[mask]
