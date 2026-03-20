@@ -6,7 +6,7 @@ from std_msgs.msg import String
 
 tracked_procs  = {}
 pids_scan_counter = 0   # สแกน pid ใหม่ทุก 5 วิ ไม่ใช่ทุกวิ
-ai_stats_cache = {}     # รับจาก topic แทนการ scan process
+ai_stats_cache = {}    
 
 CATEGORIES = [
     ('gmapping',    ['slam_gmapping', 'gmapping']),
@@ -20,7 +20,7 @@ CATEGORIES = [
     ('mediamtx',    ['mediamtx', 'rtsp-simple-server']),
     ('rosserial',   ['rosserial']),
     ('tailscale',   ['tailscale', 'tailscaled']),
-    ('stream_mgr',  ['stream_manager']),  #เพิ่ม stream_manager
+    ('stream_mgr',  ['stream_manager']), 
 ]
 
 def categorize_process(name, cmdline):
@@ -97,7 +97,6 @@ def pi_system_monitor_and_profiler():
 
     while not rospy.is_shutdown():
         try:
-            # สแกน process ใหม่ทุก 5 วิ แทนที่จะทุกวิ
             pids_scan_counter += 1
             if pids_scan_counter >= 5:
                 pids_scan_counter = 0
@@ -122,9 +121,14 @@ def pi_system_monitor_and_profiler():
                     "others": round(others_cpu, 1)
                 },
                 "ai": {  # ข้อมูล AI จาก stream_manager โดยตรง
-                    "enabled":      ai_stats_cache.get('detection_enabled', False),
-                    "mode":         ai_stats_cache.get('mode', '-'),
-                    "inference_ms": ai_stats_cache.get('inference_ms', 0.0)
+                    "enabled": ai_stats_cache.get('detection_enabled', False),
+                    "mode":    ai_stats_cache.get('mode', '-'),
+                    "model1": {  # COCO / person detection
+                        "inference_ms": round(ai_stats_cache.get('inference_ms', 0.0), 1)
+                    },
+                    "model2": {  # Door detection
+                        "inference_ms": round(ai_stats_cache.get('inference_ms2', 0.0), 1)
+                    }
                 }
             }
 

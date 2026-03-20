@@ -73,6 +73,11 @@ class NavigationManager:
     def cmd_callback(self, msg):
         should_cancel = False
         should_resume = False
+        if command == 'shutdown_raspi':
+            rospy.logwarn("Shutdown command received. Shutting down Pi...")
+            self.cleanup()
+            subprocess.Popen(['sudo', 'shutdown', '-h', 'now'])
+            return
         with self._lock:
             if not self.is_patrolling:
                 return
